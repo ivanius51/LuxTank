@@ -43,3 +43,7 @@
 # Log files 
 *.log
 *.tlog
+*.iobj
+*.ipdb
+*.filters
+*.vcxproj
