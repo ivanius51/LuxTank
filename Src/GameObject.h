@@ -50,14 +50,19 @@ public:
   COLORREF getBackground();
   UINT getWidth();
   UINT getHeight();
+  POINT getScreenPosition();
 protected:
   HDC targetdc_;
   HBITMAP targeBitmap_;
+  POINT getOffset();
+  void setOffset(int x, int y);
+  void setOffset(POINT point);
 private:
   COLORREF color_;
   COLORREF background_;
   UINT width_;
   UINT height_;
+  POINT offset_ = {0,0};
 };
 class Wall :public VisualObject
 {
@@ -88,7 +93,9 @@ public:
   void rotate(POINT point);
   void moveForward();
 protected:
+  
 private:
+  bool isMooving_ = false;
 };
 
 class Tank;
@@ -98,6 +105,7 @@ class Bullet :public MovableObject
 public:
   Bullet(Tank* tank);
   void draw();
+  void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
 protected:
 private:

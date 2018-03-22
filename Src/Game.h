@@ -36,6 +36,13 @@ public:
   GameObject* getObject(POINT point);
   bool isWalkable(int x, int y);
   bool isWalkable(POINT point);
+  bool isValidPosition(POINT point);
+  bool isValidPosition(int x, int y);
+  bool canMoveTo(POINT point);
+  bool canMoveTo(int x, int y);
+  GameObject* checkCollision (int x, int y);
+  GameObject* checkCollision (POINT point);
+  GameObject* checkCollision (const GameObject* gameobject);
 
   void increaseScore();
 
@@ -73,7 +80,7 @@ private:
 
   UINT frameDelay_ = 0;
   UINT tileSize_ = 32;
-  UINT mapSize_ = 0;
+  UINT mapSize_ = 10;
   UINT windowSize_ = 0;
   UINT textHeightPx_ = 0;
   UINT startTime_ = 0;
@@ -81,7 +88,7 @@ private:
   UINT score_ = 0;
   Tank* player_ = nullptr;
   Gold* gold_ = nullptr;
-  std::map<POINT, GameObject*, POINTComarator> tiles_;
+  std::map<POINT, std::shared_ptr<GameObject*>, POINTComarator> tiles_;
   
   void generateNewMap();
 

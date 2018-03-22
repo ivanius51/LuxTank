@@ -168,13 +168,59 @@ GameObject* Game::getObject(int x, int y)
 
 bool Game::isWalkable(int x, int y)
 {
-  return Game::getObject(x, y)->isWalkable();
+  GameObject* = Game::getObject(x, y);
+  return (GameObject) && GameObject->isWalkable();
 }
-
 bool Game::isWalkable(POINT point)
 {
-  return Game::getObject(point)->isWalkable();
+  return isWalkable(point.x, point.y);
 }
+
+bool Game::isValidPosition(POINT point)
+{
+  return isValidPosition(point.x,point.y);
+}
+bool Game::isValidPosition(int x, int y)
+{
+  return ((x>=0)&&(x<mapSize_))&&((y>=0)&&(y<mapSize_));
+}
+
+bool Game::canMoveTo(POINT point)
+{
+  return canMoveTo(point.x,point.y);
+}
+bool Game::canMoveTo(int x, int y)
+{
+  return isValidPosition(x,y)&&isWalkable(x,y);
+}
+
+GameObject* Game::checkCollision (const GameObject* gameobject)
+{
+  POINT Direction = gameobject->getDirection();
+  POINT Position = gameobject->GetPosition();
+  Position.x += (Offset.x + (Direction.x * tileSize_ / 2)) / 2;
+  Position.y += (Offset.y + (Direction.y * tileSize_ / 2)) / 2;
+  GameObject* interact = getObject(Position);
+  if (!interact)
+    return nullptr;
+  
+  POINT ScreenPosition1 = gameobject->getScreenPosition();
+  int Radius1 = max(gameobject.getWidth, gameobject.getHeight) / 2;
+  POINT ScreenPosition2 = interact->getScreenPosition();
+  int Radius2 = max(interact.getWidth, interact.getHeight) / 2;
+  
+  int x = ScreenPosition1.x - ScreenPosition2.x;
+  int y = ScreenPosition1.y - ScreenPosition2.y; 
+
+  float distance = x * x + y * y;
+  float maxdistance = (Radius2 + Radius1) * (Radius2 + Radius1);
+
+  if (distance <= maxdistance)
+    return interact;
+  else
+    return nullptr;
+}
+
 
 UINT Game::getFrameDelay()
 {

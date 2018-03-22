@@ -12,12 +12,15 @@
 
 int main()
 {
+  //can edit settings and load it from file
   Game::instance().initialization(GetConsoleWindow(), 15, 32, 60);
 
   while (true)
   {
     int startTime = GetTickCount();
 
+    Game::instance().input()->execute();
+    Game::instance().update();
     Game::instance().draw();
 
     int elapsedTime = GetTickCount() - startTime;
