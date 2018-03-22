@@ -1,7 +1,7 @@
 #include <exception>
 
 #include "stdafx.h"
-
+#include <algorithm>
 #include <string>
 #include <map>
 
@@ -168,8 +168,8 @@ GameObject* Game::getObject(int x, int y)
 
 bool Game::isWalkable(int x, int y)
 {
-  GameObject* = Game::getObject(x, y);
-  return (GameObject) && GameObject->isWalkable();
+  GameObject* gameobject = Game::getObject(x, y);
+  return ((gameobject) && gameobject->isWalkable());
 }
 bool Game::isWalkable(POINT point)
 {
@@ -194,20 +194,24 @@ bool Game::canMoveTo(int x, int y)
   return isValidPosition(x,y)&&isWalkable(x,y);
 }
 
-GameObject* Game::checkCollision (const GameObject* gameobject)
+GameObject* Game::checkCollision (GameObject* gameobject)
 {
+  if (!dynamic_cast<VisualObject*>(gameobject))
+    return nullptr;
+
   POINT Direction = gameobject->getDirection();
-  POINT Position = gameobject->GetPosition();
+  POINT Position = gameobject->getPosition();
+  POINT Offset = dynamic_cast<VisualObject*>(gameobject)->getOffset();
   Position.x += (Offset.x + (Direction.x * tileSize_ / 2)) / 2;
   Position.y += (Offset.y + (Direction.y * tileSize_ / 2)) / 2;
   GameObject* interact = getObject(Position);
-  if (!interact)
+  if (!interact || !dynamic_cast<VisualObject*>(interact))
     return nullptr;
   
-  POINT ScreenPosition1 = gameobject->getScreenPosition();
-  int Radius1 = max(gameobject.getWidth, gameobject.getHeight) / 2;
-  POINT ScreenPosition2 = interact->getScreenPosition();
-  int Radius2 = max(interact.getWidth, interact.getHeight) / 2;
+  POINT ScreenPosition1 = dynamic_cast<VisualObject*>(gameobject)->getScreenPosition();
+  int Radius1 = std::max(dynamic_cast<VisualObject*>(gameobject)->getWidth(), dynamic_cast<VisualObject*>(gameobject)->getHeight()) / 2;
+  POINT ScreenPosition2 = dynamic_cast<VisualObject*>(interact)->getScreenPosition();
+  int Radius2 = std::max(dynamic_cast<VisualObject*>(interact)->getWidth(), dynamic_cast<VisualObject*>(interact)->getHeight()) / 2;
   
   int x = ScreenPosition1.x - ScreenPosition2.x;
   int y = ScreenPosition1.y - ScreenPosition2.y; 

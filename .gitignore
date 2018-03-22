@@ -27,6 +27,20 @@
 *.lib
 
 # Executables
-*.exe
 *.out
 *.app
+
+# Visual Studio files
+*.suo
+*.opendb
+*.db
+*.pdb
+*.idb
+*.ipch
+*.ilk
+*.lastbuildstate
+
+# Log files 
+*.log
+*.tlog
+

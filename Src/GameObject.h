@@ -3,7 +3,7 @@
 #define GAMEOBJECT_H
 
 #include <vector>
-
+#define NOMINMAX
 #include <Windows.h>
 
 class GameObject
@@ -51,10 +51,10 @@ public:
   UINT getWidth();
   UINT getHeight();
   POINT getScreenPosition();
+  POINT getOffset();
 protected:
   HDC targetdc_;
   HBITMAP targeBitmap_;
-  POINT getOffset();
   void setOffset(int x, int y);
   void setOffset(POINT point);
 private:
@@ -92,6 +92,7 @@ public:
   MovableObject(int x, int y, COLORREF color = RGB(0, 0, 0), COLORREF background = RGB(0, 0, 0), UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
   void rotate(POINT point);
   void moveForward();
+  bool isMooving();
 protected:
   
 private:

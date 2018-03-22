@@ -19,7 +19,9 @@ int main()
   {
     int startTime = GetTickCount();
 
-    Game::instance().input()->execute();
+    Command* UserInputCommand = Game::instance().input();
+    if (UserInputCommand)
+      UserInputCommand->execute();
     Game::instance().update();
     Game::instance().draw();
 

@@ -42,7 +42,7 @@ public:
   bool canMoveTo(int x, int y);
   GameObject* checkCollision (int x, int y);
   GameObject* checkCollision (POINT point);
-  GameObject* checkCollision (const GameObject* gameobject);
+  GameObject* checkCollision (GameObject* gameobject);
 
   void increaseScore();
 
@@ -88,7 +88,7 @@ private:
   UINT score_ = 0;
   Tank* player_ = nullptr;
   Gold* gold_ = nullptr;
-  std::map<POINT, std::shared_ptr<GameObject*>, POINTComarator> tiles_;
+  std::map<POINT, GameObject*, POINTComarator> tiles_;
   
   void generateNewMap();
 

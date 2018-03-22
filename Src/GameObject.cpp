@@ -225,23 +225,28 @@ void MovableObject::moveForward()
 {
 }
 
-POINT VisualObject::getOffset();
+bool MovableObject::isMooving()
+{
+  return isMooving_;
+}
+
+POINT VisualObject::getOffset()
 {
   return offset_;
 }
-void VisualObject::setOffset(int x, int y);
+void VisualObject::setOffset(int x, int y)
 {
   offset_.x = x;
   offset_.y = y;
 }
-void VisualObject::setOffset(POINT point);
+void VisualObject::setOffset(POINT point)
 {
   offset_ = point;
 }
-void VisualObject::getScreenPosition();
+POINT VisualObject::getScreenPosition()
 {
   UINT TileSize = Game::instance().getTileSize();
-  return POINT({getPosition.x * TileSize + getOffset().x, getPosition.y * TileSize + getOffset().y});
+  return POINT({ int(getPosition().x * TileSize + getOffset().x), int(getPosition().y * TileSize + getOffset().y)});
 }
 
 Tank::Tank(int x, int y, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
@@ -369,12 +374,12 @@ void Bullet::update()
 {
   int TileSize = Game::instance().getTileSize();
   int MapSize = Game::instance().getMapSize();
-  if (InAnimation)
+  if (isMooving())
   {
     POINT Direction = getDirection();
-    POINT NewPosition = GetPosition();
-    NewPosition.x += (Offset.x + (Direction.x * TileSize / 2)) / TileSize;
-    NewPosition.y += (Offset.y + (Direction.y * TileSize / 2)) / TileSize;
+    POINT NewPosition = getPosition();
+    NewPosition.x += (getOffset().x + (Direction.x * TileSize / 2)) / TileSize;
+    NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
     if (Game::instance().isValidPosition(NewPosition))
     {
       
