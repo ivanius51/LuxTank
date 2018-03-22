@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 #ifndef GAME_H
 #define GAME_H
 
@@ -40,9 +40,9 @@ public:
   bool isValidPosition(int x, int y);
   bool canMoveTo(POINT point);
   bool canMoveTo(int x, int y);
-  GameObject* checkCollision (int x, int y);
-  GameObject* checkCollision (POINT point);
-  GameObject* checkCollision (GameObject* gameobject);
+  GameObject* checkCollision(int x, int y);
+  GameObject* checkCollision(POINT point);
+  GameObject* checkCollision(GameObject* gameobject);
 
   void increaseScore();
 
@@ -62,13 +62,13 @@ public:
 protected:
 private:
   //Singlton
-  Game(Game const&) = delete;             
-  Game(Game&&) = delete;                  
-  Game& operator=(Game const&) = delete;  
-  Game& operator=(Game &&) = delete;      
+  Game(Game const&) = delete;
+  Game(Game&&) = delete;
+  Game& operator=(Game const&) = delete;
+  Game& operator=(Game &&) = delete;
   Game();
   ~Game();
-  
+
   HDC hdc_ = nullptr;
   HWND handle_ = nullptr;
   HDC textLayerDc_ = nullptr;
@@ -89,7 +89,7 @@ private:
   Tank* player_ = nullptr;
   Gold* gold_ = nullptr;
   std::map<POINT, GameObject*, POINTComarator> tiles_;
-  
+
   void generateNewMap();
 
   void renderObjects();

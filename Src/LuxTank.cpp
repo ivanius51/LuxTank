@@ -1,6 +1,3 @@
-// LuxTank.cpp: определяет точку входа для консольного приложения.
-//
-
 #include "stdafx.h"
 //#include <chrono>
 //#include <thread>
@@ -9,18 +6,19 @@
 #include <windows.h>
 
 #include "Game.h"
+#include "GlobalVariables.h"
 
 int main()
 {
   //can edit settings and load it from file
-  Game::instance().initialization(GetConsoleWindow(), 15, 32, 60);
+  Game::instance().initialization(GetConsoleWindow(), MAP_SIZE, TILE_SIZE, MAX_FPS);
 
   while (true)
   {
     int startTime = GetTickCount();
 
     Command* UserInputCommand = Game::instance().input();
-    if (UserInputCommand)
+    if (UserInputCommand != nullptr)
       UserInputCommand->execute();
     Game::instance().update();
     Game::instance().draw();

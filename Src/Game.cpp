@@ -41,7 +41,7 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     cursorInfo.bVisible = false;
     SetConsoleCursorInfo(consoleOutputHandle, &cursorInfo);
     //buffer size of console calculate
-    int x = int(windowSize_ / 8);//8px
+    int x = int(windowSize_ / 8) + 1;//8px for border
     int y = int(windowSize_ / 12) + 2;//12px and two line for text
     //resize console
     CONSOLE_SCREEN_BUFFER_INFO bufferInfo;
@@ -121,6 +121,7 @@ Command* Game::input()
   {
     return nullptr;
   }
+  return nullptr;
 }
 
 void Game::update()
@@ -178,23 +179,23 @@ bool Game::isWalkable(POINT point)
 
 bool Game::isValidPosition(POINT point)
 {
-  return isValidPosition(point.x,point.y);
+  return isValidPosition(point.x, point.y);
 }
 bool Game::isValidPosition(int x, int y)
 {
-  return ((x>=0)&&(x<mapSize_))&&((y>=0)&&(y<mapSize_));
+  return ((x >= 0) && (x < mapSize_)) && ((y >= 0) && (y < mapSize_));
 }
 
 bool Game::canMoveTo(POINT point)
 {
-  return canMoveTo(point.x,point.y);
+  return canMoveTo(point.x, point.y);
 }
 bool Game::canMoveTo(int x, int y)
 {
-  return isValidPosition(x,y)&&isWalkable(x,y);
+  return isValidPosition(x, y) && isWalkable(x, y);
 }
 
-GameObject* Game::checkCollision (GameObject* gameobject)
+GameObject* Game::checkCollision(GameObject* gameobject)
 {
   if (!dynamic_cast<VisualObject*>(gameobject))
     return nullptr;
@@ -207,14 +208,14 @@ GameObject* Game::checkCollision (GameObject* gameobject)
   GameObject* interact = getObject(Position);
   if (!interact || !dynamic_cast<VisualObject*>(interact))
     return nullptr;
-  
+
   POINT ScreenPosition1 = dynamic_cast<VisualObject*>(gameobject)->getScreenPosition();
   int Radius1 = std::max(dynamic_cast<VisualObject*>(gameobject)->getWidth(), dynamic_cast<VisualObject*>(gameobject)->getHeight()) / 2;
   POINT ScreenPosition2 = dynamic_cast<VisualObject*>(interact)->getScreenPosition();
   int Radius2 = std::max(dynamic_cast<VisualObject*>(interact)->getWidth(), dynamic_cast<VisualObject*>(interact)->getHeight()) / 2;
-  
+
   int x = ScreenPosition1.x - ScreenPosition2.x;
-  int y = ScreenPosition1.y - ScreenPosition2.y; 
+  int y = ScreenPosition1.y - ScreenPosition2.y;
 
   float distance = x * x + y * y;
   float maxdistance = (Radius2 + Radius1) * (Radius2 + Radius1);
@@ -312,7 +313,7 @@ void Game::generateNewMap()
 {
   POINT point;
   std::pair<std::map<POINT, GameObject*>::iterator, bool > result;
-  for (int i = 0; i < mapSize_ ; i++)
+  for (int i = 0; i < mapSize_; i++)
     for (int j = 0; j < mapSize_ - 2; j++)
     {
       point.x = i;
@@ -327,7 +328,7 @@ void Game::generateNewMap()
 
   point.x = mapSize_ / 2 + 2;
   point.y = mapSize_ - 1;
-  player_ = new Tank(point,RGB(0,128,0),RGB(0,256,0),3);
+  player_ = new Tank(point, RGB(0, 128, 0), RGB(0, 256, 0), 3);
   result = tiles_.insert(std::pair<POINT, GameObject*>({ point }, player_));
 }
 

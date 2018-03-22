@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 #ifndef GAMEOBJECT_H
 #define GAMEOBJECT_H
 
@@ -62,7 +62,7 @@ private:
   COLORREF background_;
   UINT width_;
   UINT height_;
-  POINT offset_ = {0,0};
+  POINT offset_ = { 0,0 };
 };
 class Wall :public VisualObject
 {
@@ -94,7 +94,7 @@ public:
   void moveForward();
   bool isMooving();
 protected:
-  
+
 private:
   bool isMooving_ = false;
 };
@@ -110,7 +110,7 @@ public:
   void update();
 protected:
 private:
-  Tank* shooter_;
+  Tank * shooter_;
 };
 class Tank :public MovableObject
 {
