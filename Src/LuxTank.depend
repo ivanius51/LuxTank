@@ -1,0 +1,16 @@
+# depslib dependency file v1.0
+1521646598 source:c:\users\pc\yandexdisk\Текущие\c++\luxtank\src\main.cpp
+	<iostream>
+	"stdafx.h"
+	"GameObject.h"
+
+1521643817 c:\users\pc\yandexdisk\Текущие\c++\luxtank\src\stdafx.h
+	"targetver.h"
+	<stdio.h>
+	<tchar.h>
+
+1521646257 c:\users\pc\yandexdisk\Текущие\c++\luxtank\src\targetver.h
+
+1521651708 c:\users\pc\yandexdisk\Текущие\c++\luxtank\src\gameobject.h
+	<Windows.h>
+
