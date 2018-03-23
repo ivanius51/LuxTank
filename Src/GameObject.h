@@ -31,6 +31,7 @@ protected:
   void setAttackDamage(int damage);
   void setCanMove(bool move);
   void setIsWalkable(bool walkable);
+  POINT getOldDirection();
 private:
   UINT hp_ = 0;
   int attackDamage_ = 0;
@@ -52,10 +53,11 @@ public:
   UINT getHeight();
   POINT getScreenPosition();
   POINT getOffset();
+  void setOffset(int x, int y);
 protected:
   HDC targetdc_;
   HBITMAP targeBitmap_;
-  void setOffset(int x, int y);
+  
   void setOffset(POINT point);
 private:
   COLORREF color_;

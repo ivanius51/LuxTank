@@ -26,6 +26,10 @@ POINT GameObject::getDirection()
 {
   return direction_;
 }
+POINT GameObject::getOldDirection()
+{
+  return oldDirection_;
+}
 
 UINT GameObject::getHP()
 {
@@ -68,16 +72,16 @@ void GameObject::setPosition(POINT point)
   position_ = point;
 }
 
-void GameObject::
-setDirection(int x, int y)
+void GameObject::setDirection(int x, int y)
 {
+  oldDirection_ = direction_;
   direction_.x = x;
   direction_.y = y;
 }
 
 void GameObject::setDirection(POINT point)
 {
-  direction_ = point;
+  setDirection(point);
 }
 
 void GameObject::setHP(UINT hp)
@@ -103,8 +107,8 @@ void GameObject::setIsWalkable(bool walkable)
 VisualObject::VisualObject(int x, int y, UINT hp, int attackDamage, COLORREF color, COLORREF background, UINT width, UINT height)
   :GameObject(x, y, hp, attackDamage)
 {
-  //targetdc_ = Game::instance().getHdc();
-  //targeBitmap_ = Game::instance().getHdc();
+  targetdc_ = 0;// Game::instance().getHdc();
+  targeBitmap_ = 0;//Game::instance().getHdc();
   color_ = color;
   background_ = background;
   if (width)
@@ -150,7 +154,7 @@ Wall::Wall(POINT point, UINT hp, int attackDamage, COLORREF color, COLORREF back
 
 void Wall::draw()
 {
-  if (targetdc_ && targeBitmap_)
+  if (targetdc_ != 0 && targeBitmap_ != 0)
     drawTo(targetdc_, targeBitmap_);
   else
     drawTo(Game::instance().getBufferDc(), Game::instance().getBuffer());
@@ -203,6 +207,7 @@ void Gold::draw()
 
 void Gold::drawTo(HDC hdc, HBITMAP hbitmap)
 {
+  Wall::drawTo(hdc, hbitmap);
 }
 
 void Gold::update()
@@ -219,10 +224,12 @@ MovableObject::MovableObject(int x, int y, COLORREF color, COLORREF background, 
 
 void MovableObject::rotate(POINT point)
 {
+  setDirection(point);
 }
 
 void MovableObject::moveForward()
 {
+  isMooving_ = true;
 }
 
 bool MovableObject::isMooving()
@@ -265,7 +272,7 @@ void Tank::shoot()
 
 void Tank::draw()
 {
-  if (targetdc_ && targeBitmap_)
+  if (targetdc_!=0 && targeBitmap_ != 0)
     drawTo(targetdc_, targeBitmap_);
   else
     drawTo(Game::instance().getBufferDc(), Game::instance().getBuffer());
@@ -329,7 +336,7 @@ Bullet::Bullet(Tank* tank)
 
 void Bullet::draw()
 {
-  if (targetdc_ && targeBitmap_)
+  if (targetdc_ != 0 && targeBitmap_ != 0)
     drawTo(targetdc_, targeBitmap_);
   else
     drawTo(Game::instance().getBufferDc(), Game::instance().getBuffer());

@@ -26,7 +26,9 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     mapSize_ = mapSize;
     tileSize_ = tileSize;
     windowSize_ = mapSize * tileSize;
-    textHeightPx_ = 24 + windowSize_ % 12;
+    borderSize_ = 4;
+    textHeightPx_ = 32 - borderSize_ * 2 + windowSize_ % 12;
+    
     if (fpsmax > 1000)
       frameDelay_ = 1;
     else
@@ -42,7 +44,7 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     SetConsoleCursorInfo(consoleOutputHandle, &cursorInfo);
     //buffer size of console calculate
     int x = int(windowSize_ / 8) + 1;//8px for border
-    int y = int(windowSize_ / 12) + 2;//12px and two line for text
+    int y = int(windowSize_ / 12) + 3;//12px and two line for text
     //resize console
     CONSOLE_SCREEN_BUFFER_INFO bufferInfo;
     GetConsoleScreenBufferInfo(consoleOutputHandle, &bufferInfo);
@@ -65,20 +67,28 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     textLayerDc_ = CreateCompatibleDC(hdc_);
     if (!textLayerDc_)
       throw std::runtime_error("can't Create DC textLayer");
-    textLayer_ = CreateCompatibleBitmap(hdc_, windowSize_, textHeightPx_);
+    textLayer_ = CreateCompatibleBitmap(hdc_, windowSize_ + borderSize_ * 2, textHeightPx_);
     if (!textLayer_)
       throw std::runtime_error("can't Create Bitmap textLayer");
     HFONT hFont = CreateFont(20, 6, 0, 0, FW_DONTCARE, 0, 0, 0, ANSI_CHARSET,
       OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, DRAFT_QUALITY, VARIABLE_PITCH,
       "SYSTEM_FIXED_FONT");
-    BitBlt(hdc_, 0, textHeightPx_, windowSize_, windowSize_, hdc_, 0, 0, BLACKNESS);
+    BitBlt(hdc_, 0, textHeightPx_, windowSize_ + borderSize_ * 2, windowSize_ + borderSize_ * 2, hdc_, 0, 0, BLACKNESS);
 
     bufferDc_ = CreateCompatibleDC(hdc_);
     if (!bufferDc_)
       throw std::runtime_error("can't Create DC Buffer");
-    buffer_ = CreateCompatibleBitmap(hdc_, windowSize_, windowSize_);
+    buffer_ = CreateCompatibleBitmap(hdc_, windowSize_ , windowSize_ );
     if (!buffer_)
       throw std::runtime_error("can't Create Bitmap Buffer");
+
+    staticLayerDc_ = CreateCompatibleDC(hdc_);
+    if (!bufferDc_)
+      throw std::runtime_error("can't Create DC Buffer");
+    staticLayer_ = CreateCompatibleBitmap(hdc_, windowSize_ + borderSize_ * 2, windowSize_ + borderSize_ * 2);
+    if (!buffer_)
+      throw std::runtime_error("can't Create Bitmap Buffer");
+    
 
     generateNewMap();
 
@@ -126,12 +136,17 @@ Command* Game::input()
 
 void Game::update()
 {
+  for (std::map<POINT, GameObject*>::iterator i = tiles_.begin(); i != tiles_.end(); i++)
+  {
+    i->second->update();
+  }
 }
 
 void Game::draw()
 {
-  drawObjects();
+  drawBorder();
   renderObjects();
+  drawObjects();
   drawGui();
 }
 
@@ -276,7 +291,7 @@ void Game::drawBitmap(HDC hdc, int x, int y, HBITMAP hBitmap, bool transparent)
 {
   if (hBitmap)
   {
-    HDC hMemDC = CreateCompatibleDC(hdc);
+    HDC hMemDC = CreateCompatibleDC(hdc_);
     HGDIOBJ replaced = SelectObject(hMemDC, hBitmap);
     if (replaced)
     {
@@ -313,6 +328,7 @@ void Game::generateNewMap()
 {
   POINT point;
   std::pair<std::map<POINT, GameObject*>::iterator, bool > result;
+  /*
   for (int i = 0; i < mapSize_; i++)
     for (int j = 0; j < mapSize_ - 2; j++)
     {
@@ -320,7 +336,7 @@ void Game::generateNewMap()
       point.y = j;
       result = tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point)));
     }
-
+  */
   point.x = mapSize_ / 2;
   point.y = mapSize_ - 1;
 
@@ -330,45 +346,64 @@ void Game::generateNewMap()
   point.y = mapSize_ - 1;
   player_ = new Tank(point, RGB(0, 128, 0), RGB(0, 256, 0), 3);
   result = tiles_.insert(std::pair<POINT, GameObject*>({ point }, player_));
+  player_->moveForward();
+}
+
+void Game::drawBorder()
+{
+  HGDIOBJ replaced = SelectObject(staticLayerDc_, staticLayer_);
+
+  BitBlt(staticLayerDc_, 0, 0, windowSize_ + borderSize_*2, windowSize_ + borderSize_ * 2, staticLayerDc_, 0, 0, BLACKNESS);
+  HPEN pen = CreatePen(PS_SOLID, 1, COLOR_WINDOW);
+  HGDIOBJ oldPen = SelectObject(staticLayerDc_, pen);
+  Rectangle(staticLayerDc_, 1, 1, windowSize_ + borderSize_ * 2 - 1, windowSize_ + borderSize_ * 2 - 1);
+  SelectObject(staticLayerDc_, oldPen);
+  DeleteObject(pen);
+  BitBlt(staticLayerDc_, borderSize_, borderSize_, windowSize_, windowSize_, staticLayerDc_, 0, 0, BLACKNESS);
+  
+  SelectObject(staticLayerDc_, replaced);
 }
 
 void Game::renderObjects()
 {
+  HGDIOBJ replacedBuffer = SelectObject(bufferDc_, buffer_);
+  HGDIOBJ replacedStatic = SelectObject(staticLayerDc_, staticLayer_);
+
+  //clear buufer
+  BitBlt(bufferDc_, 0, 0, windowSize_, windowSize_, bufferDc_, 0, 0, BLACKNESS);
   for (std::map<POINT, GameObject*>::iterator i = tiles_.begin(); i != tiles_.end(); i++)
   {
     i->second->draw();
   }
 
-  drawBitmap(hdc_, 0, textHeightPx_, buffer_, false);
+  //draw buffer to frame
+  BitBlt(staticLayerDc_, borderSize_, borderSize_, windowSize_, windowSize_, bufferDc_, 0, 0, SRCPAINT);
+
+  SelectObject(bufferDc_, replacedBuffer);
+  SelectObject(staticLayerDc_, replacedStatic);
 }
 
 void Game::drawObjects()
 {
-  HGDIOBJ replaced = SelectObject(bufferDc_, buffer_);
-
-  BitBlt(bufferDc_, 0, 0, windowSize_, windowSize_, bufferDc_, 0, 0, WHITENESS);
-  Rectangle(bufferDc_, 1, 1, windowSize_ - 1, windowSize_ - 1);
-
-  SelectObject(bufferDc_, replaced);
-
-  //drawBitmap(hdc_, 0, textHeightPx_, buffer_, false);
+  //draw frame
+  drawBitmap(hdc_, 0, textHeightPx_, staticLayer_, false);
 }
 
 void Game::drawGui()
 {
   HGDIOBJ replaced = SelectObject(textLayerDc_, textLayer_);
   //clean
-  BitBlt(textLayerDc_, 0, 0, windowSize_, textHeightPx_, textLayerDc_, 0, 0, WHITENESS);
-  Rectangle(textLayerDc_, 1, 1, windowSize_ - 1, textHeightPx_ - 1);
+  BitBlt(textLayerDc_, 0, 0, windowSize_ + borderSize_ * 2, textHeightPx_, textLayerDc_, 0, 0, WHITENESS);
+  Rectangle(textLayerDc_, 1, 1, windowSize_ + borderSize_ * 2 - 1, textHeightPx_ - 1);
   UINT Time = GetTickCount() - startTime_;
   UINT Sec = (Time / 1000) % 60;
   UINT Min = ((Time / 60000) % 60);
   std::string strOut = "Time " + std::to_string(Min) + ":" + std::to_string(Sec);
-  TextOut(textLayerDc_, 2, 2, strOut.c_str(), strOut.length());
+  TextOut(textLayerDc_, borderSize_, borderSize_, strOut.c_str(), strOut.length());
   strOut = "Score:" + std::to_string(score_) + " Lives: " + std::to_string(player_->getHP());
   SIZE textsize;
   GetTextExtentPoint32(textLayerDc_, strOut.c_str(), strOut.length(), &textsize);
-  TextOut(textLayerDc_, windowSize_ - textsize.cx - 2, 2, strOut.c_str(), strOut.length());
+  TextOut(textLayerDc_, windowSize_ + borderSize_ * 2 - textsize.cx - borderSize_, borderSize_, strOut.c_str(), strOut.length());
   //deselect a textLayer_ bitmap for use int other DC
   SelectObject(textLayerDc_, replaced);
   drawBitmap(hdc_, 0, 0, textLayer_, false);

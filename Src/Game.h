@@ -4,6 +4,7 @@
 
 #include <Windows.h>
 #include <map>
+#include <memory>
 
 struct POINTComarator {
   bool operator() (const POINT& point1, const POINT& point2) const
@@ -72,16 +73,17 @@ private:
   HDC hdc_ = nullptr;
   HWND handle_ = nullptr;
   HDC textLayerDc_ = nullptr;
-  HDC staticLayerDc_ = nullptr;
-  HDC bufferDc_ = nullptr;
   HBITMAP textLayer_ = nullptr;
+  HDC staticLayerDc_ = nullptr;
   HBITMAP staticLayer_ = nullptr;
+  HDC bufferDc_ = nullptr;
   HBITMAP buffer_ = nullptr;
 
   UINT frameDelay_ = 0;
   UINT tileSize_ = 32;
   UINT mapSize_ = 10;
   UINT windowSize_ = 0;
+  UINT borderSize_;
   UINT textHeightPx_ = 0;
   UINT startTime_ = 0;
 
@@ -92,6 +94,7 @@ private:
 
   void generateNewMap();
 
+  void drawBorder();
   void renderObjects();
   void drawObjects();
   void drawGui();
