@@ -10,41 +10,41 @@ public:
   virtual void execute() = 0;
 };
 
-class MoveForwardCommand : Command
+class MoveForwardCommand : public Command
 {
   private:
     GameObject* object_;
   public:
-    void moveForwardCommand(GameObject* gameobject);
+    MoveForwardCommand(GameObject* gameobject);
     void execute();
 };
 
-class TakeDamageCommand : Command
+class TakeDamageCommand : public Command
 {
   private:
     GameObject* object_;
     int damage_ = 1;
   public:
-    void takeDamageCommand(GameObject* gameobject, int damage = 1);
+    TakeDamageCommand(GameObject* gameobject, int damage = 1);
     void execute();
 };
 
-class RotateCommand : Command
+class RotateCommand : public Command
 {
   private:
     GameObject* object_;
     POINT direction_;
   public:
-    void rotateCommand(GameObject* gameobject, int x, int y);
+    RotateCommand(GameObject* gameobject, int x, int y);
     void execute();
 };
 
-class FireCommand : Command
+class FireCommand : public Command
 {
   private:
     GameObject* object_;
   public:
-    void fireCommand(GameObject* gameobject);
+    FireCommand(GameObject* gameobject);
     void execute();
 };
 

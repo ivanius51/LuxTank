@@ -8,6 +8,7 @@
 #include "GameObject.h"
 #include "Game.h"
 
+
 Game & Game::instance()
 {
   static Game* instance = new Game();
@@ -105,33 +106,37 @@ void Game::free()
   DeleteObject(textLayer_);
 }
 
-Command* Game::input()
+Command* Game::input() const
 {
+  if (GetTickCount() % 5 != 0)
+    return nullptr;
+
+  Command* command = nullptr;
   if (GetAsyncKeyState(VK_UP))
   {
-    return nullptr;
+    command = new RotateCommand(player_, 0, -1);
   }
   if (GetAsyncKeyState(VK_DOWN))
   {
-    return nullptr;
+    command = new RotateCommand(player_, 0, 1);
   }
   if (GetAsyncKeyState(VK_LEFT))
   {
-    return nullptr;
+    command = new RotateCommand(player_, -1, 0);
   }
   if (GetAsyncKeyState(VK_RIGHT))
   {
-    return nullptr;
+    command = new RotateCommand(player_, 1, 0);
   }
   if (GetAsyncKeyState(VK_SPACE))
   {
-    return nullptr;
+    command = new FireCommand(player_);
   }
   if (GetAsyncKeyState(VK_ESCAPE))
   {
     return nullptr;
   }
-  return nullptr;
+  return command;
 }
 
 void Game::update()
@@ -174,6 +179,16 @@ GameObject* Game::getObject(POINT point)
     return nullptr;
 }
 
+void Game::deleteObject(GameObject* gameobject)
+{
+  for (std::map<POINT, GameObject*>::iterator i = tiles_.begin(); i != tiles_.end(); i++)
+    if (i->second == gameobject)
+    {
+      tiles_.erase(i);
+      break;
+    }
+}
+
 GameObject* Game::getObject(int x, int y)
 {
   POINT point;
@@ -185,7 +200,7 @@ GameObject* Game::getObject(int x, int y)
 bool Game::isWalkable(int x, int y)
 {
   GameObject* gameobject = Game::getObject(x, y);
-  return ((gameobject) && gameobject->isWalkable());
+  return ((!gameobject) || gameobject->isWalkable());
 }
 bool Game::isWalkable(POINT point)
 {
@@ -207,7 +222,7 @@ bool Game::canMoveTo(POINT point)
 }
 bool Game::canMoveTo(int x, int y)
 {
-  return isValidPosition(x, y) && isWalkable(x, y);
+  return (isValidPosition(x, y) && isWalkable(x, y));
 }
 
 GameObject* Game::checkCollision(GameObject* gameobject)
@@ -327,26 +342,33 @@ Game::~Game()
 void Game::generateNewMap()
 {
   POINT point;
-  std::pair<std::map<POINT, GameObject*>::iterator, bool > result;
-  /*
+  
   for (int i = 0; i < mapSize_; i++)
     for (int j = 0; j < mapSize_ - 2; j++)
+    if (rand() % 100 < 20)
     {
-      point.x = i;
-      point.y = j;
-      result = tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point)));
+      point = {i, j};
+      GameObject* gameobject = new Wall(point);
+      tiles_.insert(std::pair<POINT, GameObject*>({ point }, gameobject));
     }
-  */
-  point.x = mapSize_ / 2;
-  point.y = mapSize_ - 1;
-
-  result = tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Gold(point)));
+  
+  
 
   point.x = mapSize_ / 2 + 2;
   point.y = mapSize_ - 1;
-  player_ = new Tank(point, RGB(0, 128, 0), RGB(0, 256, 0), 3);
-  result = tiles_.insert(std::pair<POINT, GameObject*>({ point }, player_));
-  player_->moveForward();
+  player_ = new Tank(point, ALLY_COLOR, ALLY_COLOR / 2, PLAYER_LIVES);
+  tiles_.insert(std::pair<POINT, GameObject*>({ point }, player_));
+
+  for (int i = int(mapSize_ / 2 - 1); i <= int(mapSize_ / 2 + 1); i++)
+  {
+    point = { i, int(mapSize_ - 2) };
+    tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point)));
+    point = { i, int(mapSize_ - 1) };
+    if (i == (mapSize_ / 2))
+      tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Gold(point)));
+    else
+      tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point)));
+  }
 }
 
 void Game::drawBorder()
@@ -396,8 +418,8 @@ void Game::drawGui()
   BitBlt(textLayerDc_, 0, 0, windowSize_ + borderSize_ * 2, textHeightPx_, textLayerDc_, 0, 0, WHITENESS);
   Rectangle(textLayerDc_, 1, 1, windowSize_ + borderSize_ * 2 - 1, textHeightPx_ - 1);
   UINT Time = GetTickCount() - startTime_;
-  UINT Sec = (Time / 1000) % 60;
-  UINT Min = ((Time / 60000) % 60);
+  UINT Sec = (Time / MSEC_IN_SEC) % SEC_IN_MIN;
+  UINT Min = ((Time / MSEC_IN_SEC / SEC_IN_MIN) % SEC_IN_MIN);
   std::string strOut = "Time " + std::to_string(Min) + ":" + std::to_string(Sec);
   TextOut(textLayerDc_, borderSize_, borderSize_, strOut.c_str(), strOut.length());
   strOut = "Score:" + std::to_string(score_) + " Lives: " + std::to_string(player_->getHP());

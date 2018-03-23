@@ -12,6 +12,7 @@ GameObject::GameObject(POINT position, UINT hp, int attackDamage)
 GameObject::GameObject(int x, int y, UINT hp, int attackDamage)
 {
   hp_ = hp;
+  maxHp_ = hp;
   attackDamage_ = attackDamage;
   position_.x = x;
   position_.y = y;
@@ -36,6 +37,11 @@ UINT GameObject::getHP()
   return hp_;
 }
 
+UINT GameObject::getMaxHP()
+{
+  return maxHp_;
+}
+
 int GameObject::getAttackDamage()
 {
   return attackDamage_;
@@ -58,7 +64,7 @@ bool GameObject::isDead()
 
 void GameObject::takeDamage(int damage)
 {
-  hp_ += damage;
+  hp_ -= damage;
 }
 
 void GameObject::setPosition(int x, int y)
@@ -81,7 +87,7 @@ void GameObject::setDirection(int x, int y)
 
 void GameObject::setDirection(POINT point)
 {
-  setDirection(point);
+  setDirection(point.x, point.y);
 }
 
 void GameObject::setHP(UINT hp)
@@ -144,7 +150,7 @@ UINT VisualObject::getHeight()
 Wall::Wall(int x, int y, UINT hp, int attackDamage, COLORREF color, COLORREF background, UINT width, UINT height)
   :VisualObject(x, y, hp, attackDamage, color, background, width, height)
 {
-
+  setIsWalkable(false);
 }
 
 Wall::Wall(POINT point, UINT hp, int attackDamage, COLORREF color, COLORREF background, UINT width, UINT height)
@@ -176,6 +182,15 @@ void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
     UINT TileSize = Game::instance().getTileSize();
 
     Rectangle(hdc, getPosition().x*TileSize, getPosition().y*TileSize, (getPosition().x + 1)*TileSize, (getPosition().y + 1)*TileSize);
+    if (getHP() < getMaxHP())
+    {
+      int stage = getMaxHP() / 4;
+      int currentStage = getHP() / stage;
+      //for (int i = getHP(); i < getMaxHP(); i += stage)
+      {
+        BitBlt(hdc, getPosition().x*TileSize, getPosition().y*TileSize, TileSize, (TileSize * 0.9 / currentStage), hdc, 0, 0, BLACKNESS);
+      }
+    }
 
     SelectObject(hdc, oldBrush);
     DeleteObject(brush);
@@ -188,6 +203,11 @@ void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
 
 void Wall::update()
 {
+  if (isDead())
+  {
+    Game::instance().deleteObject(this);
+    delete this;
+  }
 }
 
 Gold::Gold(UINT x, UINT y) :
@@ -219,17 +239,23 @@ void Gold::update()
 MovableObject::MovableObject(int x, int y, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
   :VisualObject(x, y, hp, attackDamage, color, background, width, height)
 {
-
+  isMooving_ = false;
 }
 
 void MovableObject::rotate(POINT point)
 {
-  setDirection(point);
+  if (!isMooving_)
+    setDirection(point);
 }
 
 void MovableObject::moveForward()
 {
   isMooving_ = true;
+}
+
+void MovableObject::stop()
+{
+  isMooving_ = false;
 }
 
 bool MovableObject::isMooving()
@@ -250,6 +276,14 @@ void VisualObject::setOffset(POINT point)
 {
   offset_ = point;
 }
+void VisualObject::setWidth(UINT width)
+{
+  width_ = width;
+}
+void VisualObject::setHeight(UINT height)
+{
+  height_ = height;
+}
 POINT VisualObject::getScreenPosition()
 {
   UINT TileSize = Game::instance().getTileSize();
@@ -268,11 +302,21 @@ Tank::Tank(POINT point, COLORREF color, COLORREF background, UINT hp, int attack
 
 void Tank::shoot()
 {
+  if (bullet && !bullet->isMooving())
+  {
+    delete bullet;
+  }
+  if (!bullet || !bullet->isMooving())
+    //if ((GetTickCount() - ShootTime_)>ShootDelay)
+    {
+      //ShootTime_ = GetTickCount();
+      bullet = new Bullet(this);
+    }
 }
 
 void Tank::draw()
 {
-  if (targetdc_!=0 && targeBitmap_ != 0)
+  if (targetdc_ != 0 && targeBitmap_ != 0)
     drawTo(targetdc_, targeBitmap_);
   else
     drawTo(Game::instance().getBufferDc(), Game::instance().getBuffer());
@@ -293,9 +337,8 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
 
     UINT TileSize = Game::instance().getTileSize();
     POINT offset = getOffset();
-    POINT screenPosition = { getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
+    POINT screenPosition = getScreenPosition();//{ getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
 
-    //TODO: replace magic numbers to calculation from tilesize
     int width = int(TileSize / 5);
     int height = int(TileSize / 3);
     int center = round(TileSize / 2);
@@ -307,12 +350,12 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
     width = 2;
     if (getDirection().x == 0)
       Rectangle(hdc,
-        screenPosition.x + 14, screenPosition.y + center - height * ((getDirection().y < 0) ? 0 : -1),
-        screenPosition.x + 17, screenPosition.y + center + height * ((getDirection().y > 0) ? 0 : -1));
+        screenPosition.x + center - 1, screenPosition.y + center - height * ((getDirection().y < 0) ? 0 : -1),
+        screenPosition.x + center + 1, screenPosition.y + center + height * ((getDirection().y > 0) ? 0 : -1));
     else
       Rectangle(hdc,
-        screenPosition.x + center - height * ((getDirection().x < 0) ? 0 : -1), screenPosition.y + 14,
-        screenPosition.x + center + height * ((getDirection().x > 0) ? 0 : -1), screenPosition.y + 17);
+        screenPosition.x + center - height * ((getDirection().x < 0) ? 0 : -1), screenPosition.y + center + 1,
+        screenPosition.x + center + height * ((getDirection().x > 0) ? 0 : -1), screenPosition.y + center - 1);
 
     SelectObject(hdc, oldBrush);
     DeleteObject(brush);
@@ -321,17 +364,63 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
 
     SelectObject(hdc, replaced);
   };
+  if (bullet)
+    bullet->draw();
 }
 
 void Tank::update()
 {
+  // if turned reload image (use new turn)
+  //if (getOldDirection().x != getDirection().x || getOldDirection().y != getDirection().y)
+  //  ClearBuffer();
+
+  int TileSize = Game::instance().getTileSize();
+  int MapSize = Game::instance().getMapSize();
+
+  POINT NewPosition = getPosition();
+  NewPosition.x += getDirection().x;
+  NewPosition.y += getDirection().y;
+
+  if (isMooving())
+  {
+    if ((abs(getOffset().x) >= TileSize - 1) || (abs(getOffset().y) >= TileSize - 1))
+    {
+      stop();
+      setOffset(0, 0);
+      if (Game::instance().canMoveTo(NewPosition))
+        setPosition(NewPosition);
+    }
+    else
+    {
+      setOffset(getOffset().x + getDirection().x, getOffset().y + getDirection().y);
+      if (!Game::instance().canMoveTo(NewPosition) && (abs(getOffset().x) >= (TileSize / 5) || abs(getOffset().y) >= (TileSize / 5)))
+      {
+        stop();
+        setOffset(0, 0);
+      }
+    }
+  }
   //if AI - find player, gold and move to it or if see it - shoot
+
+  if (bullet)
+  {
+    bullet->update();
+    if (!bullet->isMooving())
+    {
+      delete bullet;
+      bullet = nullptr;
+    }
+  }
 }
 
 Bullet::Bullet(Tank* tank)
   :MovableObject(tank->getPosition().x + tank->getDirection().x, tank->getPosition().y + tank->getDirection().y, tank->getColor(), tank->getBackground(), 0, tank->getAttackDamage(), 0, 0)
 {
-
+  UINT TileSize = Game::instance().getTileSize();
+  setWidth(TileSize / 4);
+  setHeight(TileSize / 4);
+  setOffset(tank->getOffset().x - tank->getDirection().y*(TileSize / 2), tank->getOffset().y - tank->getDirection().x*(TileSize / 2));
+  moveForward();
 }
 
 void Bullet::draw()
@@ -356,7 +445,7 @@ void Bullet::drawTo(HDC hdc, HBITMAP hbitmap)
 
     UINT TileSize = Game::instance().getTileSize();
     POINT offset = getOffset();
-    POINT screenPosition = { getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
+    POINT screenPosition = getScreenPosition(); //{ getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
 
     int width = round(TileSize / 10) / 2;
     int height = round(TileSize / 3) / 2;
@@ -364,8 +453,8 @@ void Bullet::drawTo(HDC hdc, HBITMAP hbitmap)
     POINT Direction = getDirection();
 
     Rectangle(hdc,
-      center - width - (Direction.x * height), center - width - (Direction.y * height),
-      center + width + (Direction.x * height), center + width + (Direction.y * height));
+      screenPosition.x - width - (Direction.x * height), screenPosition.y + center - width - (Direction.y * height),
+      screenPosition.x + width + (Direction.x * height), screenPosition.y + center + width + (Direction.y * height));
 
 
     SelectObject(hdc, oldBrush);
@@ -387,9 +476,16 @@ void Bullet::update()
     POINT NewPosition = getPosition();
     NewPosition.x += (getOffset().x + (Direction.x * TileSize / 2)) / TileSize;
     NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
-    if (Game::instance().isValidPosition(NewPosition))
+    if (Game::instance().canMoveTo(NewPosition))
     {
-
+      setOffset(getOffset().x + getDirection().x, getOffset().y + getDirection().y);
+    }
+    else
+    {
+      stop();
+      GameObject* gameobject = Game::instance().getObject(NewPosition);
+      if (gameobject)
+        gameobject->takeDamage(this->getAttackDamage());
     }
   }
 }

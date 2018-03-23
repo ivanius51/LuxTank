@@ -24,10 +24,10 @@ class Game
 public:
   static Game& instance();
 
-  void initialization(HWND handle, UINT mapSize = 15, UINT tileSize = 32, UINT fpsmax = 60);
+  void initialization(HWND handle, UINT mapSize = MAP_SIZE, UINT tileSize = TILE_SIZE, UINT fpsmax = MAX_FPS);
   void free();
 
-  Command* input();
+  Command* input() const;
   void update();
   void draw();
 
@@ -35,6 +35,7 @@ public:
   Gold* getGold();
   GameObject* getObject(int x, int y);
   GameObject* getObject(POINT point);
+  void deleteObject(GameObject* gameobject);
   bool isWalkable(int x, int y);
   bool isWalkable(POINT point);
   bool isValidPosition(POINT point);
@@ -80,8 +81,8 @@ private:
   HBITMAP buffer_ = nullptr;
 
   UINT frameDelay_ = 0;
-  UINT tileSize_ = 32;
-  UINT mapSize_ = 10;
+  UINT tileSize_;
+  UINT mapSize_;
   UINT windowSize_ = 0;
   UINT borderSize_;
   UINT textHeightPx_ = 0;

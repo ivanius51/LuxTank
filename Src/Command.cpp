@@ -3,7 +3,7 @@
 #include "Command.h"
 #include "GameObject.h"
 
-void MoveForwardCommand::moveForwardCommand(GameObject* gameobject)
+MoveForwardCommand::MoveForwardCommand(GameObject* gameobject)
 {
   object_ = gameobject;
 }
@@ -14,7 +14,7 @@ void MoveForwardCommand::execute()
     dynamic_cast<MovableObject*>(object_)->moveForward();
 }
 
-void TakeDamageCommand::takeDamageCommand(GameObject * gameobject, int damage)
+TakeDamageCommand::TakeDamageCommand(GameObject * gameobject, int damage)
 {
   object_ = gameobject;
   damage_ = damage;
@@ -25,7 +25,7 @@ void TakeDamageCommand::execute()
   object_->takeDamage(damage_);
 }
 
-void FireCommand::fireCommand(GameObject* gameobject)
+FireCommand::FireCommand(GameObject* gameobject)
 {
   object_ = gameobject;
 }
@@ -36,7 +36,7 @@ void FireCommand::execute()
     dynamic_cast<Tank*>(object_)->shoot();
 }
 
-void RotateCommand::rotateCommand(GameObject * gameobject, int x, int y)
+RotateCommand::RotateCommand(GameObject * gameobject, int x, int y)
 {
   object_ = gameobject;
   direction_.x = x;
@@ -46,5 +46,10 @@ void RotateCommand::rotateCommand(GameObject * gameobject, int x, int y)
 void RotateCommand::execute()
 {
   if (dynamic_cast<MovableObject*>(object_))
-    dynamic_cast<MovableObject*>(object_)->rotate(direction_);
+  {
+    if (object_->getDirection().x != direction_.x || object_->getDirection().y != direction_.y)
+      dynamic_cast<MovableObject*>(object_)->rotate(direction_);
+    else
+      dynamic_cast<MovableObject*>(object_)->moveForward();
+  }
 }

@@ -6,6 +6,8 @@
 #define NOMINMAX
 #include <Windows.h>
 
+#include "GlobalVariables.h"
+
 class GameObject
 {
 public:
@@ -14,6 +16,7 @@ public:
   POINT getPosition();
   POINT getDirection();
   UINT getHP();
+  UINT getMaxHP();
   int getAttackDamage();
   bool canMove();
   bool isWalkable();
@@ -34,12 +37,13 @@ protected:
   POINT getOldDirection();
 private:
   UINT hp_ = 0;
+  UINT maxHp_ = 0;
   int attackDamage_ = 0;
   bool canMove_ = false;
   bool isWalkable_ = true;
-  POINT position_ = { 0,0 };
-  POINT direction_ = { 0,-1 };
-  POINT oldDirection_ = { 0,-1 };
+  POINT position_ = { 0, 0 };
+  POINT direction_ = { 0, -1 };
+  POINT oldDirection_ = { 0, -1 };
   UINT32 updateTime_;
   UINT32 drawTime_;
 };
@@ -53,12 +57,13 @@ public:
   UINT getHeight();
   POINT getScreenPosition();
   POINT getOffset();
-  void setOffset(int x, int y);
 protected:
   HDC targetdc_;
   HBITMAP targeBitmap_;
-  
+  void setOffset(int x, int y);
   void setOffset(POINT point);
+  void setWidth(UINT width);
+  void setHeight(UINT height);
 private:
   COLORREF color_;
   COLORREF background_;
@@ -69,8 +74,8 @@ private:
 class Wall :public VisualObject
 {
 public:
-  Wall(int x, int y, UINT hp = 4, int attackDamage = 0, COLORREF color = RGB(0, 0, 128), COLORREF background = RGB(0, 0, 255), UINT width = 0, UINT height = 0);
-  Wall(POINT point, UINT hp = 4, int attackDamage = 0, COLORREF color = RGB(0, 0, 128), COLORREF background = RGB(0, 0, 255), UINT width = 0, UINT height = 0);
+  Wall(int x, int y, UINT hp = 4, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
+  Wall(POINT point, UINT hp = 4, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
@@ -91,9 +96,10 @@ private:
 class MovableObject :public VisualObject
 {
 public:
-  MovableObject(int x, int y, COLORREF color = RGB(0, 0, 0), COLORREF background = RGB(0, 0, 0), UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
+  MovableObject(int x, int y, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
   void rotate(POINT point);
   void moveForward();
+  void stop();
   bool isMooving();
 protected:
 
@@ -117,15 +123,16 @@ private:
 class Tank :public MovableObject
 {
 public:
-  Tank(int x, int y, COLORREF color = RGB(0, 0, 0), COLORREF background = RGB(0, 0, 0), UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
-  Tank(POINT point, COLORREF color = RGB(0, 0, 0), COLORREF background = RGB(0, 0, 0), UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
+  Tank(int x, int y, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
+  Tank(POINT point, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
   void shoot();
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
 protected:
 private:
-  std::vector<Bullet> bullets_;
+  std::vector<Bullet*> bullets_;
+  Bullet* bullet;
 };
 
 
