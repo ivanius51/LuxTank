@@ -108,9 +108,6 @@ void Game::free()
 
 Command* Game::input() const
 {
-  if (GetTickCount() % 5 != 0)
-    return nullptr;
-
   Command* command = nullptr;
   if (GetAsyncKeyState(VK_UP))
   {
@@ -145,6 +142,8 @@ void Game::update()
   {
     i->second->update();
   }
+  if (player_->isDead())
+    Game::instance().isRunning = false;
 }
 
 void Game::draw()

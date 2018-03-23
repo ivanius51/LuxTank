@@ -23,6 +23,7 @@ class Game
 {
 public:
   static Game& instance();
+  bool isRunning = true;
 
   void initialization(HWND handle, UINT mapSize = MAP_SIZE, UINT tileSize = TILE_SIZE, UINT fpsmax = MAX_FPS);
   void free();

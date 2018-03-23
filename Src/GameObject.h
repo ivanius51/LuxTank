@@ -132,7 +132,8 @@ public:
 protected:
 private:
   std::vector<Bullet*> bullets_;
-  Bullet* bullet;
+  Bullet* bullet_;
+  UINT ShootTime_;
 };
 
 

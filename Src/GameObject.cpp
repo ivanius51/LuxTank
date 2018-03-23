@@ -168,6 +168,8 @@ void Wall::draw()
 
 void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
 {
+  if (isDead())
+    return;
   HGDIOBJ replaced = SelectObject(hdc, hbitmap);
   if (replaced)
   {
@@ -184,8 +186,8 @@ void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
     Rectangle(hdc, getPosition().x*TileSize, getPosition().y*TileSize, (getPosition().x + 1)*TileSize, (getPosition().y + 1)*TileSize);
     if (getHP() < getMaxHP())
     {
-      int stage = getMaxHP() / 4;
-      int currentStage = getHP() / stage;
+      int stage = round(getMaxHP() / 4);
+      int currentStage = round(getHP() / stage);
       //for (int i = getHP(); i < getMaxHP(); i += stage)
       {
         BitBlt(hdc, getPosition().x*TileSize, getPosition().y*TileSize, TileSize, (TileSize * 0.9 / currentStage), hdc, 0, 0, BLACKNESS);
@@ -232,8 +234,8 @@ void Gold::drawTo(HDC hdc, HBITMAP hbitmap)
 
 void Gold::update()
 {
-  Wall::update();
-  //gameover if dead
+  if (isDead())
+    Game::instance().isRunning = false;
 }
 
 MovableObject::MovableObject(int x, int y, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
@@ -302,15 +304,15 @@ Tank::Tank(POINT point, COLORREF color, COLORREF background, UINT hp, int attack
 
 void Tank::shoot()
 {
-  if (bullet && !bullet->isMooving())
+  if (bullet_ && !bullet_->isMooving())
   {
-    delete bullet;
+    delete bullet_;
   }
-  if (!bullet || !bullet->isMooving())
-    //if ((GetTickCount() - ShootTime_)>ShootDelay)
+  if (!bullet_ || !bullet_->isMooving())
+    if ((GetTickCount() - ShootTime_)>SHOOT_DELAY)
     {
-      //ShootTime_ = GetTickCount();
-      bullet = new Bullet(this);
+      ShootTime_ = GetTickCount();
+      bullet_ = new Bullet(this);
     }
 }
 
@@ -364,8 +366,8 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
 
     SelectObject(hdc, replaced);
   };
-  if (bullet)
-    bullet->draw();
+  if (bullet_)
+    bullet_->draw();
 }
 
 void Tank::update()
@@ -402,13 +404,13 @@ void Tank::update()
   }
   //if AI - find player, gold and move to it or if see it - shoot
 
-  if (bullet)
+  if (bullet_)
   {
-    bullet->update();
-    if (!bullet->isMooving())
+    bullet_->update();
+    if (!bullet_->isMooving())
     {
-      delete bullet;
-      bullet = nullptr;
+      delete bullet_;
+      bullet_ = nullptr;
     }
   }
 }
@@ -416,10 +418,11 @@ void Tank::update()
 Bullet::Bullet(Tank* tank)
   :MovableObject(tank->getPosition().x + tank->getDirection().x, tank->getPosition().y + tank->getDirection().y, tank->getColor(), tank->getBackground(), 0, tank->getAttackDamage(), 0, 0)
 {
+  setDirection(tank->getDirection());
   UINT TileSize = Game::instance().getTileSize();
   setWidth(TileSize / 4);
   setHeight(TileSize / 4);
-  setOffset(tank->getOffset().x - tank->getDirection().y*(TileSize / 2), tank->getOffset().y - tank->getDirection().x*(TileSize / 2));
+  //setOffset(tank->getOffset().x - tank->getDirection().y*(TileSize / 2), tank->getOffset().y - tank->getDirection().x*(TileSize / 2));
   moveForward();
 }
 
@@ -445,17 +448,22 @@ void Bullet::drawTo(HDC hdc, HBITMAP hbitmap)
 
     UINT TileSize = Game::instance().getTileSize();
     POINT offset = getOffset();
-    POINT screenPosition = getScreenPosition(); //{ getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
+    POINT screenPosition = getScreenPosition();//{ getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
 
     int width = round(TileSize / 10) / 2;
     int height = round(TileSize / 3) / 2;
     int center = round(TileSize / 2);
     POINT Direction = getDirection();
 
-    Rectangle(hdc,
-      screenPosition.x - width - (Direction.x * height), screenPosition.y + center - width - (Direction.y * height),
-      screenPosition.x + width + (Direction.x * height), screenPosition.y + center + width + (Direction.y * height));
-
+    width = 2;
+    if (getDirection().x == 0)
+      Rectangle(hdc,
+        screenPosition.x + center - 1, screenPosition.y + center - height * ((getDirection().y < 0) ? 0 : -1),
+        screenPosition.x + center + 1, screenPosition.y + center + height * ((getDirection().y > 0) ? 0 : -1));
+    else
+      Rectangle(hdc,
+        screenPosition.x + center - height * ((getDirection().x < 0) ? 0 : -1), screenPosition.y + center + 1,
+        screenPosition.x + center + height * ((getDirection().x > 0) ? 0 : -1), screenPosition.y + center - 1);
 
     SelectObject(hdc, oldBrush);
     DeleteObject(brush);
@@ -485,7 +493,9 @@ void Bullet::update()
       stop();
       GameObject* gameobject = Game::instance().getObject(NewPosition);
       if (gameobject)
+      {
         gameobject->takeDamage(this->getAttackDamage());
+      }
     }
   }
 }

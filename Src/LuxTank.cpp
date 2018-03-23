@@ -12,14 +12,15 @@ int main()
 {
   //can edit settings and load it from file
   Game::instance().initialization(GetConsoleWindow(), MAP_SIZE, TILE_SIZE, MAX_FPS);
-  while (true)
+  while (Game::instance().isRunning)
   {
     int startTime = GetTickCount();
-
-    Command* UserInputCommand = Game::instance().input();
-    if (UserInputCommand != nullptr)
-      UserInputCommand->execute();
-
+    if (startTime % 5 != 0)
+    {
+      Command* UserInputCommand = Game::instance().input();
+      if (UserInputCommand != nullptr)
+        UserInputCommand->execute();
+    }
     Game::instance().update();
     Game::instance().draw();
 
