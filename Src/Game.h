@@ -6,16 +6,6 @@
 #include <map>
 #include <memory>
 
-struct POINTComarator {
-  bool operator() (const POINT& point1, const POINT& point2) const
-  {
-    if (point1.x != point2.x)
-      return point1.x < point2.x;
-    else
-      return point1.y < point2.y;
-  }
-};
-
 #include "GameObject.h"
 #include "Command.h"
 
@@ -43,6 +33,8 @@ public:
   bool isValidPosition(int x, int y);
   bool canMoveTo(POINT point);
   bool canMoveTo(int x, int y);
+  bool isInVisibleDistance(POINT first, POINT second);
+  bool isIntersection(POINT first, POINT second);
   GameObject* checkCollision(int x, int y);
   GameObject* checkCollision(POINT point);
   GameObject* checkCollision(GameObject* gameobject);
@@ -82,10 +74,10 @@ private:
   HBITMAP buffer_ = nullptr;
 
   UINT frameDelay_ = 0;
-  UINT tileSize_;
-  UINT mapSize_;
+  UINT tileSize_ = 0;
+  UINT mapSize_ = 0;
   UINT windowSize_ = 0;
-  UINT borderSize_;
+  UINT borderSize_ = 0;
   UINT textHeightPx_ = 0;
   UINT startTime_ = 0;
 

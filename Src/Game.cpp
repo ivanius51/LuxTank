@@ -5,11 +5,13 @@
 #include <string>
 #include <map>
 
+#include <math.h>
+
 #include "GameObject.h"
 #include "Game.h"
 
 
-Game & Game::instance()
+Game& Game::instance()
 {
   static Game* instance = new Game();
   return *instance;
@@ -109,27 +111,27 @@ void Game::free()
 Command* Game::input() const
 {
   Command* command = nullptr;
-  if (GetAsyncKeyState(VK_UP))
+  if (GetAsyncKeyState(VK_UP) & 0x8000)
   {
     command = new RotateCommand(player_, 0, -1);
   }
-  if (GetAsyncKeyState(VK_DOWN))
+  if (GetAsyncKeyState(VK_DOWN) & 0x8000)
   {
     command = new RotateCommand(player_, 0, 1);
   }
-  if (GetAsyncKeyState(VK_LEFT))
+  if (GetAsyncKeyState(VK_LEFT) & 0x8000)
   {
     command = new RotateCommand(player_, -1, 0);
   }
-  if (GetAsyncKeyState(VK_RIGHT))
+  if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
   {
     command = new RotateCommand(player_, 1, 0);
   }
-  if (GetAsyncKeyState(VK_SPACE))
+  if (GetAsyncKeyState(VK_SPACE) & 0x8000)
   {
     command = new FireCommand(player_);
   }
-  if (GetAsyncKeyState(VK_ESCAPE))
+  if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
   {
     return nullptr;
   }
@@ -154,21 +156,19 @@ void Game::draw()
   drawGui();
 }
 
-Tank* Game::getPlayer()
-{
-  return player_;
-}
-
-Gold* Game::getGold()
-{
-  return gold_;
-}
-
 void Game::increaseScore()
 {
   score_++;
 }
 
+Tank* Game::getPlayer()
+{
+  return player_;
+}
+Gold* Game::getGold()
+{
+  return gold_;
+}
 GameObject* Game::getObject(POINT point)
 {
   auto tile = tiles_.find(point);
@@ -177,17 +177,15 @@ GameObject* Game::getObject(POINT point)
   else
     return nullptr;
 }
-
 void Game::deleteObject(GameObject* gameobject)
 {
-  for (std::map<POINT, GameObject*>::iterator i = tiles_.begin(); i != tiles_.end(); i++)
-    if (i->second == gameobject)
+  for (std::map<POINT, GameObject*>::iterator it = tiles_.begin(); it != tiles_.end(); it++)
+    if (it->second == gameobject)
     {
-      tiles_.erase(i);
+      tiles_.erase(it);
       break;
     }
 }
-
 GameObject* Game::getObject(int x, int y)
 {
   POINT point;
@@ -195,7 +193,6 @@ GameObject* Game::getObject(int x, int y)
   point.y = y;
   return Game::getObject(point);
 }
-
 bool Game::isWalkable(int x, int y)
 {
   GameObject* gameobject = Game::getObject(x, y);
@@ -205,7 +202,6 @@ bool Game::isWalkable(POINT point)
 {
   return isWalkable(point.x, point.y);
 }
-
 bool Game::isValidPosition(POINT point)
 {
   return isValidPosition(point.x, point.y);
@@ -214,7 +210,6 @@ bool Game::isValidPosition(int x, int y)
 {
   return ((x >= 0) && (x < mapSize_)) && ((y >= 0) && (y < mapSize_));
 }
-
 bool Game::canMoveTo(POINT point)
 {
   return canMoveTo(point.x, point.y);
@@ -223,7 +218,14 @@ bool Game::canMoveTo(int x, int y)
 {
   return (isValidPosition(x, y) && isWalkable(x, y));
 }
-
+bool Game::isInVisibleDistance(POINT first, POINT second)
+{
+  return (sqrt(SQR(second.x-first.x)+SQR(second.y-first.y))<VISIBLE_DISTANCE);
+}
+bool Game::isIntersection(POINT first, POINT second)
+{
+  return ((first.x==second.x)||(first.y==second.y));
+}
 GameObject* Game::checkCollision(GameObject* gameobject)
 {
   if (!dynamic_cast<VisualObject*>(gameobject))
@@ -392,7 +394,7 @@ void Game::renderObjects()
 
   //clear buufer
   BitBlt(bufferDc_, 0, 0, windowSize_, windowSize_, bufferDc_, 0, 0, BLACKNESS);
-  for (std::map<POINT, GameObject*>::iterator i = tiles_.begin(); i != tiles_.end(); i++)
+  for (std::map<POINT, GameObject*>::const_iterator i = tiles_.begin(); i != tiles_.end(); i++)
   {
     i->second->draw();
   }

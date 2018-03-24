@@ -3,6 +3,7 @@
 #define GAMEOBJECT_H
 
 #include <vector>
+#include <memory>
 #define NOMINMAX
 #include <Windows.h>
 
@@ -98,13 +99,19 @@ class MovableObject :public VisualObject
 public:
   MovableObject(int x, int y, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
   void rotate(POINT point);
+  void rotateTo(POINT point);
   void moveForward();
   void stop();
   bool isMooving();
+  bool canUpdate();
+  UINT getUpdateTime();
+  UINT getUpdateDelay();
+  void setUpdateDelay(UINT updateDelay);
 protected:
-
+  UINT updateTime_ = 0;
 private:
   bool isMooving_ = false;
+  UINT updateDelay_ = 0;
 };
 
 class Tank;
@@ -129,11 +136,15 @@ public:
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
+  bool isEnemy();
+  bool isPlayer();
 protected:
 private:
   std::vector<Bullet*> bullets_;
   Bullet* bullet_;
   UINT ShootTime_;
+  bool isenemy_;
+  bool isplayer_
 };
 
 

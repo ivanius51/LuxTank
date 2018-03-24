@@ -244,10 +244,34 @@ MovableObject::MovableObject(int x, int y, COLORREF color, COLORREF background, 
   isMooving_ = false;
 }
 
+UINT MovableObject::getUpdateTime()
+{
+  return updateTime_;
+}
+UINT MovableObject::getUpdateDelay()
+{
+  return updateDelay_;
+}
+void MovableObject::setUpdateDelay(UINT updateDelay)
+{
+  updateDelay_ = updateDelay;
+}
+
+bool MovableObject::canUpdate()
+{
+  return (GetTickCount()-updateTime_)>updateDelay;
+}
+
 void MovableObject::rotate(POINT point)
 {
   if (!isMooving_)
     setDirection(point);
+}
+
+void MovableObject::rotateTo(POINT point)
+{
+  if (!isMooving_)
+    setDirection(sign(point.x-getPosition().x),sign(point.y-getPosition().y));
 }
 
 void MovableObject::moveForward()
@@ -302,6 +326,16 @@ Tank::Tank(POINT point, COLORREF color, COLORREF background, UINT hp, int attack
 {
 }
 
+bool Tank::isEnemy()
+{
+  return isenemy_;
+}
+
+bool Tank::isPlayer()
+{
+  return isplayer_;
+}
+
 void Tank::shoot()
 {
   if (bullet_ && !bullet_->isMooving())
@@ -339,25 +373,25 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
 
     UINT TileSize = Game::instance().getTileSize();
     POINT offset = getOffset();
-    POINT screenPosition = getScreenPosition();//{ getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
+    POINT ScreenPosition = getScreenPosition();//{ getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
 
     int width = int(TileSize / 5);
     int height = int(TileSize / 3);
     int center = round(TileSize / 2);
 
     Rectangle(hdc,
-      screenPosition.x + center - width * ((getDirection().x < 0) ? 1 : 2), screenPosition.y + center - width * ((getDirection().y < 0) ? 1 : 2),
-      screenPosition.x + center + width * ((getDirection().x > 0) ? 1 : 2), screenPosition.y + center + width * ((getDirection().y > 0) ? 1 : 2));
+      ScreenPosition.x + center - width * ((getDirection().x < 0) ? 1 : 2), ScreenPosition.y + center - width * ((getDirection().y < 0) ? 1 : 2),
+      ScreenPosition.x + center + width * ((getDirection().x > 0) ? 1 : 2), ScreenPosition.y + center + width * ((getDirection().y > 0) ? 1 : 2));
 
     width = 2;
     if (getDirection().x == 0)
       Rectangle(hdc,
-        screenPosition.x + center - 1, screenPosition.y + center - height * ((getDirection().y < 0) ? 0 : -1),
-        screenPosition.x + center + 1, screenPosition.y + center + height * ((getDirection().y > 0) ? 0 : -1));
+        ScreenPosition.x + center - 1, ScreenPosition.y + center - height * ((getDirection().y < 0) ? 0 : -1),
+        ScreenPosition.x + center + 1, ScreenPosition.y + center + height * ((getDirection().y > 0) ? 0 : -1));
     else
       Rectangle(hdc,
-        screenPosition.x + center - height * ((getDirection().x < 0) ? 0 : -1), screenPosition.y + center + 1,
-        screenPosition.x + center + height * ((getDirection().x > 0) ? 0 : -1), screenPosition.y + center - 1);
+        ScreenPosition.x + center - height * ((getDirection().x < 0) ? 0 : -1), ScreenPosition.y + center + 1,
+        ScreenPosition.x + center + height * ((getDirection().x > 0) ? 0 : -1), ScreenPosition.y + center - 1);
 
     SelectObject(hdc, oldBrush);
     DeleteObject(brush);
@@ -374,7 +408,7 @@ void Tank::update()
 {
   // if turned reload image (use new turn)
   //if (getOldDirection().x != getDirection().x || getOldDirection().y != getDirection().y)
-  //  ClearBuffer();
+  //  getTextureRotate(getDirection());
 
   int TileSize = Game::instance().getTileSize();
   int MapSize = Game::instance().getMapSize();
@@ -402,7 +436,48 @@ void Tank::update()
       }
     }
   }
-  //if AI - find player, gold and move to it or if see it - shoot
+  
+  //TODO: Enemy Actions move it to some AI class.method
+  if (isEnemy() && canUpdate())
+  {
+    updateTime_ = GetTickCount;
+    //if AI - find player, gold and move to it or if see it - shoot
+    GameObject* Player = Game::instance().getPlayer();
+    //see player
+    if (isInVisibleDistance(getPosition(),Player->getPosition()))
+    {
+      //can turn and shoot
+      if isIntersection(getPosition(),Player->getPosition()))
+      {
+        rotateTo(Player->getPosition());
+        this->Shoot();
+      }
+      else
+      if (!isMooving())
+      {
+        //ends of map
+        if (Game::instance().CanMoveTo(NewPosition))
+          moveForward();
+        else
+        {
+          Direction.x = !Direction.x;
+          Direction.y = !Direction.y;
+        }
+      }
+    }
+  }
+  
+  //check self bullets
+  bullets_.erase(
+      std::remove_if(bullets_.begin(), bullets_.end(), !isMooving), bullets_.end()
+    );
+  //take indexes and remove after
+  
+  for(std::vector<Bullet*>::const_iterator it = bullets_.begin(); it != bullets_.end(); it++)
+  {
+    if (it)
+      (*it)->update();
+  }
 
   if (bullet_)
   {
@@ -448,7 +523,7 @@ void Bullet::drawTo(HDC hdc, HBITMAP hbitmap)
 
     UINT TileSize = Game::instance().getTileSize();
     POINT offset = getOffset();
-    POINT screenPosition = getScreenPosition();//{ getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
+    POINT ScreenPosition = getScreenPosition();//{ getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
 
     int width = round(TileSize / 10) / 2;
     int height = round(TileSize / 3) / 2;
@@ -458,12 +533,12 @@ void Bullet::drawTo(HDC hdc, HBITMAP hbitmap)
     width = 2;
     if (getDirection().x == 0)
       Rectangle(hdc,
-        screenPosition.x + center - 1, screenPosition.y + center - height * ((getDirection().y < 0) ? 0 : -1),
-        screenPosition.x + center + 1, screenPosition.y + center + height * ((getDirection().y > 0) ? 0 : -1));
+        ScreenPosition.x + center - 1, ScreenPosition.y + center - height * ((getDirection().y < 0) ? 0 : -1),
+        ScreenPosition.x + center + 1, ScreenPosition.y + center + height * ((getDirection().y > 0) ? 0 : -1));
     else
       Rectangle(hdc,
-        screenPosition.x + center - height * ((getDirection().x < 0) ? 0 : -1), screenPosition.y + center + 1,
-        screenPosition.x + center + height * ((getDirection().x > 0) ? 0 : -1), screenPosition.y + center - 1);
+        ScreenPosition.x + center - height * ((getDirection().x < 0) ? 0 : -1), ScreenPosition.y + center + 1,
+        ScreenPosition.x + center + height * ((getDirection().x > 0) ? 0 : -1), ScreenPosition.y + center - 1);
 
     SelectObject(hdc, oldBrush);
     DeleteObject(brush);
