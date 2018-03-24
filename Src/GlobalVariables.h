@@ -1,6 +1,7 @@
 //#pragma once
 #ifndef GLOBALVARIABLES_H
 #define GLOBALVARIABLES_H
+#include "GameObject.h"
 
 struct POINTComarator {
   bool operator() (const POINT& point1, const POINT& point2) const
@@ -11,9 +12,12 @@ struct POINTComarator {
       return point1.y < point2.y;
   }
 };
+template <typename T> int sign(T value)
+{
+  return (value > 0) ? 1 : ((value < 0) ? -1 : 0);
+};
 
-bool isMooving(const GameObject* gameobject);
-inline int SQR(int x);
+extern inline int SQR(int x);
 
 extern int MAX_FPS;
 extern int MAP_SIZE;

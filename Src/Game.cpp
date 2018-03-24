@@ -55,12 +55,12 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     COORD windowSize = { windowInfo.Right - windowInfo.Left + 1, windowInfo.Bottom - windowInfo.Top + 1 };
     if (windowSize.X > x || windowSize.Y > y)
     {
-      SMALL_RECT windowinfo = { 0, 0, x < windowSize.X ? x - 1 : windowSize.X - 1, y < windowSize.Y ? y - 1 : windowSize.Y - 1 };
+      SMALL_RECT windowinfo = { 0, 0, SHORT(x < windowSize.X ? x - 1 : windowSize.X - 1), SHORT(y < windowSize.Y ? y - 1 : windowSize.Y - 1) };
       SetConsoleWindowInfo(consoleOutputHandle, TRUE, &windowinfo);
     }
-    COORD size = { x, y };
+    COORD size = { SHORT(x), SHORT(y) };
     SetConsoleScreenBufferSize(consoleOutputHandle, size);
-    SMALL_RECT windowinfo = { 0, 0, x - 1, y - 1 };
+    SMALL_RECT windowinfo = { 0, 0, SHORT(x - 1), SHORT(y - 1) };
     SetConsoleWindowInfo(consoleOutputHandle, TRUE, &windowinfo);
     //prepare window
     system("cls");
@@ -226,7 +226,7 @@ bool Game::isIntersection(POINT first, POINT second)
 {
   return ((first.x==second.x)||(first.y==second.y));
 }
-GameObject* Game::checkCollision(GameObject* gameobject)
+GameObject* Game::collidedWith(GameObject* gameobject)
 {
   if (!dynamic_cast<VisualObject*>(gameobject))
     return nullptr;
@@ -248,8 +248,8 @@ GameObject* Game::checkCollision(GameObject* gameobject)
   int x = ScreenPosition1.x - ScreenPosition2.x;
   int y = ScreenPosition1.y - ScreenPosition2.y;
 
-  float distance = x * x + y * y;
-  float maxdistance = (Radius2 + Radius1) * (Radius2 + Radius1);
+  int distance = x * x + y * y;
+  int maxdistance = (Radius2 + Radius1) * (Radius2 + Radius1);
 
   if (distance <= maxdistance)
     return interact;

@@ -17,19 +17,8 @@ COLORREF COLOR_GREY = RGB(128, 128, 128);
 COLORREF COLOR_BLACK = 0;
 POINT DEFAULT_DIRECTION = { 0, -1 };
 
-bool isMooving(const GameObject* gameobject)
-{
-  if (dynamic_cast<MovableObject*>(gameobject))
-    return dynamic_cast<MovableObject*>(gameobject)->isMooving();
-  else
-    return false;
-}
-
 inline int SQR(int x)
 {
   return x*x;
 }
 
-template <typename T> int sign(T value) {
-    return (value > 0) ? 1 : ((value < 0) ? -1 : 0);
-}

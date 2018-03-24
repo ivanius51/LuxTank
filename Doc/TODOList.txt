@@ -1,0 +1,6 @@
+fix all memory leaks with use smart pointers for objects.
+add destructors where use objects and free memory.
+Move tiles,size ets Game::methods to new World class.
+DO NOT Use pointers with local objects - try use reference for this and allocate in stack.
+write AIWork function for controll (update) AI objects.
+In far write Unit Tests for check objects creation, collisions, ets (write all things).

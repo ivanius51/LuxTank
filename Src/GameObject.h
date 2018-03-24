@@ -14,6 +14,7 @@ class GameObject
 public:
   GameObject(POINT position, UINT hp, int attackDamage);
   GameObject(int x, int y, UINT hp, int attackDamage);
+  virtual ~GameObject();
   POINT getPosition();
   POINT getDirection();
   UINT getHP();
@@ -22,7 +23,8 @@ public:
   bool canMove();
   bool isWalkable();
   bool isDead();
-  void takeDamage(int damage);
+  virtual void takeDamage(int damage);
+  virtual void takeDamage(int damage, POINT damageDirection) = 0;
   virtual void draw() = 0;
   virtual void drawTo(HDC hdc, HBITMAP hbitmap) = 0;
   virtual void update() = 0;
@@ -58,9 +60,11 @@ public:
   UINT getHeight();
   POINT getScreenPosition();
   POINT getOffset();
+  void takeDamage(int damage, POINT damageDirection);
 protected:
   HDC targetdc_;
   HBITMAP targeBitmap_;
+  RECT Destrucions = { 0, 0, 0, 0 };
   void setOffset(int x, int y);
   void setOffset(POINT point);
   void setWidth(UINT width);
@@ -75,8 +79,8 @@ private:
 class Wall :public VisualObject
 {
 public:
-  Wall(int x, int y, UINT hp = 4, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
-  Wall(POINT point, UINT hp = 4, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
+  Wall(int x, int y, UINT hp = 5, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
+  Wall(POINT point, UINT hp = 5, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
@@ -125,7 +129,7 @@ public:
   void update();
 protected:
 private:
-  Tank * shooter_;
+  Tank * shooter_ = nullptr;
 };
 class Tank :public MovableObject
 {
@@ -140,11 +144,10 @@ public:
   bool isPlayer();
 protected:
 private:
-  std::vector<Bullet*> bullets_;
-  Bullet* bullet_;
+  Bullet * bullet_ = nullptr;
   UINT ShootTime_;
-  bool isenemy_;
-  bool isplayer_
+  bool isenemy_ = false;
+  bool isplayer_ = false;
 };
 
 

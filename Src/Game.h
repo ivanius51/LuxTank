@@ -35,9 +35,9 @@ public:
   bool canMoveTo(int x, int y);
   bool isInVisibleDistance(POINT first, POINT second);
   bool isIntersection(POINT first, POINT second);
-  GameObject* checkCollision(int x, int y);
-  GameObject* checkCollision(POINT point);
-  GameObject* checkCollision(GameObject* gameobject);
+  //bool checkCollision(int x, int y);
+  //bool checkCollision(POINT point);
+  GameObject* collidedWith(GameObject* gameobject);
 
   void increaseScore();
 
@@ -85,6 +85,7 @@ private:
   Tank* player_ = nullptr;
   Gold* gold_ = nullptr;
   std::map<POINT, GameObject*, POINTComarator> tiles_;
+  //std::vector<Bullet*> bullets_;
 
   void generateNewMap();
 
