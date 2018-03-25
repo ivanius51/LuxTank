@@ -73,7 +73,7 @@ void Game::initialization(HWND handle, bool topmost, UINT mapSize, UINT tileSize
 
     //prepare window
     system("cls");
-    SetBkMode(hdc_, TRANSPARENT);
+    //SetBkMode(hdc_, TRANSPARENT);
 
     //Create Text Layer DC,Bitmap
     textLayerDc_ = CreateCompatibleDC(hdc_);
@@ -398,7 +398,7 @@ void Game::generateNewMap()
 
   point.x = mapSize_ / 2 + 2;
   point.y = mapSize_ - 1;
-  player_ = new Tank(point, ALLY_COLOR, ALLY_COLOR / 2, PLAYER_LIVES);
+  player_ = new Tank(point, TANK_GREEN_UP1_TEXTURE, ALLY_COLOR, PLAYER_LIVES);
   tiles_.insert(std::pair<POINT, GameObject*>({ point }, player_));
 
   for (int i = int(mapSize_ / 2 - 1); i <= int(mapSize_ / 2 + 1); i++)

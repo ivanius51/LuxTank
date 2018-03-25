@@ -19,10 +19,13 @@ template <typename T> int sign(T value)
 extern inline int SQR(int x);
 
 namespace gdi {
-  extern void drawBitmap(HDC hdc, int x, int y, HBITMAP hBitmap, bool transparent = false);
-  extern void drawBitmap(HDC hdc, int x, int y, int width, int height, HBITMAP hBitmap, bool transparent = false);
+  extern void drawBitmap(HDC hdc, const int x, const int y, HBITMAP hBitmap, const bool transparent = false);
+  extern void drawBitmap(HDC hdc, const int x, const int y, const int width, const int height, HBITMAP hBitmap, const bool transparent = false);
+  extern void rotateTexture(HBITMAP hBitmap, const int degres, bool AdjustSize = false);
+  extern void rotateTexture2(HBITMAP hBitmap, const int degres, bool AdjustSize = false);
+  extern HBITMAP copyBitmap(HBITMAP hBitmap);
 }
-
+extern double PI;
 extern int MAX_FPS;
 extern int MAP_SIZE;
 extern int TILE_SIZE;
@@ -37,6 +40,7 @@ extern COLORREF ENEMY_COLOR;
 extern COLORREF COLOR_GREY;
 extern COLORREF COLOR_BLACK;
 extern const std::string WALL_TEXTURE;
+extern const std::string TANK_GREEN_UP1_TEXTURE;
 extern POINT DEFAULT_DIRECTION;
 
 

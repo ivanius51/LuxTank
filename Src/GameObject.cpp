@@ -39,6 +39,11 @@ POINT GameObject::getOldDirection()
   return oldDirection_;
 }
 
+void GameObject::setOldDirection()
+{
+  oldDirection_ = direction_;
+}
+
 UINT GameObject::getHP()
 {
   return hp_;
@@ -177,6 +182,7 @@ HBITMAP VisualObject::getTexture()
   return texture_;
 }
 
+
 void VisualObject::takeDamage(int damage, POINT damageDirection)
 {
   GameObject::takeDamage(damage);
@@ -253,16 +259,11 @@ void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
     targetdc_ = hdc;
     targeBitmap_ = hbitmap;
 
-    HPEN pen = CreatePen(PS_SOLID, 1, getColor());
-    HGDIOBJ oldPen = SelectObject(hdc, pen);
-    HBRUSH brush = CreateSolidBrush(COLOR_BLACK);
-    HGDIOBJ oldBrush = SelectObject(hdc, brush);
-
     UINT TileSize = Game::instance().getTileSize();
     POINT Position = getScreenPosition();
     int stage = 0;
     if (getHP() < getMaxHP())
-      stage = int(TileSize / (getMaxHP() - 1));
+      stage = int(TileSize / (getMaxHP() - 1)) - 1;
 
     if (getTexture())
     {
@@ -275,6 +276,11 @@ void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
     }
     else
     {
+      HPEN pen = CreatePen(PS_SOLID, 1, getColor());
+      HGDIOBJ oldPen = SelectObject(hdc, pen);
+      HBRUSH brush = CreateSolidBrush(COLOR_BLACK);
+      HGDIOBJ oldBrush = SelectObject(hdc, brush);
+
       Rectangle(hdc,
         Position.x, Position.y,
         Position.x + TileSize, Position.y + TileSize);
@@ -285,13 +291,12 @@ void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
       Rectangle(hdc,
         Position.x + Destrucions.left * stage, Position.y + Destrucions.top * stage,
         Position.x + TileSize - Destrucions.right * stage, Position.y + TileSize - Destrucions.bottom * stage);
+
+      SelectObject(hdc, oldBrush);
+      DeleteObject(brush);
+      SelectObject(hdc, oldPen);
+      DeleteObject(pen);
     }
-
-    SelectObject(hdc, oldBrush);
-    DeleteObject(brush);
-    SelectObject(hdc, oldPen);
-    DeleteObject(pen);
-
     SelectObject(hdc, replaced);
   };
 }
@@ -333,6 +338,12 @@ void Gold::update()
 
 MovableObject::MovableObject(int x, int y, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
   :VisualObject(x, y, hp, attackDamage, color, background, width, height)
+{
+  isMooving_ = false;
+}
+
+MovableObject::MovableObject(int x, int y, UINT hp, int attackDamage, const std::string & texture, COLORREF color, COLORREF background, UINT width, UINT height)
+  : VisualObject(x, y, hp, attackDamage, color, background, texture, width, height)
 {
   isMooving_ = false;
 }
@@ -393,6 +404,16 @@ Tank::Tank(POINT point, COLORREF color, COLORREF background, UINT hp, int attack
 {
 }
 
+Tank::Tank(int x, int y, const std::string & texture, COLORREF color, UINT hp, int attackDamage, UINT width, UINT height)
+  : MovableObject(x, y, hp, attackDamage, texture, color, color, width, height)
+{
+}
+
+Tank::Tank(POINT point, const std::string & texture, COLORREF color, UINT hp, int attackDamage, UINT width, UINT height)
+  : Tank(point.x, point.y, texture, color, hp, attackDamage, width, height)
+{
+}
+
 bool Tank::isEnemy()
 {
   return isenemy_;
@@ -434,42 +455,59 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
     targetdc_ = hdc;
     targeBitmap_ = hbitmap;
 
-    HPEN pen = CreatePen(PS_SOLID, 1, getColor());
-    HGDIOBJ oldPen = SelectObject(hdc, pen);
-    HBRUSH brush = CreateSolidBrush(getBackground());
-    HGDIOBJ oldBrush = SelectObject(hdc, brush);
-
     UINT TileSize = Game::instance().getTileSize();
     POINT offset = getOffset();
-    POINT ScreenPosition = getScreenPosition();//{ getPosition().x * TileSize + offset.x,getPosition().y * TileSize + offset.y };
-
-    int width = int(TileSize / 5);
-    int height = int(TileSize / 3);
-    int center = int(TileSize / 2);
-
-    Rectangle(hdc,
-      ScreenPosition.x + center - width * ((getDirection().x < 0) ? 1 : 2), ScreenPosition.y + center - width * ((getDirection().y < 0) ? 1 : 2),
-      ScreenPosition.x + center + width * ((getDirection().x > 0) ? 1 : 2), ScreenPosition.y + center + width * ((getDirection().y > 0) ? 1 : 2));
-
-    Ellipse(hdc,
-      ScreenPosition.x + center - width, ScreenPosition.y + center - width,
-      ScreenPosition.x + center + width, ScreenPosition.y + center + width);
-
-    width = 2;
-    if (getDirection().x == 0)
-      Rectangle(hdc,
-        ScreenPosition.x + center - 1, ScreenPosition.y + center - height * ((getDirection().y < 0) ? 0 : -1),
-        ScreenPosition.x + center + 1, ScreenPosition.y + center + height * ((getDirection().y > 0) ? 0 : -1));
+    POINT Position = getScreenPosition();
+    if (getTexture())
+    {
+      HBITMAP texture = gdi::copyBitmap(getTexture());
+      int degres = 0;
+      if (getDirection().x == -1)
+        degres = 270;
+      else
+        if (getDirection().y == 1)
+          degres = 180;
+      else
+      if (getDirection().x == 1)
+        degres = 90;
+      gdi::rotateTexture(texture, degres, true);
+      gdi::drawBitmap(hdc, Position.x, Position.y, TileSize, TileSize, texture, true);
+      DeleteObject(texture);
+    }
     else
+    {
+      HPEN pen = CreatePen(PS_SOLID, 1, getColor());
+      HGDIOBJ oldPen = SelectObject(hdc, pen);
+      HBRUSH brush = CreateSolidBrush(getBackground());
+      HGDIOBJ oldBrush = SelectObject(hdc, brush);
+
+      int width = int(TileSize / 5);
+      int height = int(TileSize / 3);
+      int center = int(TileSize / 2);
+
       Rectangle(hdc,
-        ScreenPosition.x + center - height * ((getDirection().x < 0) ? 0 : -1), ScreenPosition.y + center + 1,
-        ScreenPosition.x + center + height * ((getDirection().x > 0) ? 0 : -1), ScreenPosition.y + center - 1);
+        Position.x + center - width * ((getDirection().x < 0) ? 1 : 2), Position.y + center - width * ((getDirection().y < 0) ? 1 : 2),
+        Position.x + center + width * ((getDirection().x > 0) ? 1 : 2), Position.y + center + width * ((getDirection().y > 0) ? 1 : 2));
 
-    SelectObject(hdc, oldBrush);
-    DeleteObject(brush);
-    SelectObject(hdc, oldPen);
-    DeleteObject(pen);
+      Ellipse(hdc,
+        Position.x + center - width, Position.y + center - width,
+        Position.x + center + width, Position.y + center + width);
 
+      width = 2;
+      if (getDirection().x == 0)
+        Rectangle(hdc,
+          Position.x + center - 1, Position.y + center - height * ((getDirection().y < 0) ? 0 : -1),
+          Position.x + center + 1, Position.y + center + height * ((getDirection().y > 0) ? 0 : -1));
+      else
+        Rectangle(hdc,
+          Position.x + center - height * ((getDirection().x < 0) ? 0 : -1), Position.y + center + 1,
+          Position.x + center + height * ((getDirection().x > 0) ? 0 : -1), Position.y + center - 1);
+
+      SelectObject(hdc, oldBrush);
+      DeleteObject(brush);
+      SelectObject(hdc, oldPen);
+      DeleteObject(pen);
+    }
     SelectObject(hdc, replaced);
   };
   //if (bullet_)
@@ -478,10 +516,6 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
 
 void Tank::update()
 {
-  // if turned reload image (use new turn)
-  //if (getOldDirection().x != getDirection().x || getOldDirection().y != getDirection().y)
-  //  getTextureRotate(getDirection());
-
   int TileSize = Game::instance().getTileSize();
   int MapSize = Game::instance().getMapSize();
 
@@ -563,13 +597,13 @@ void Tank::update()
 }
 
 Bullet::Bullet(Tank* tank)
-  :MovableObject(tank->getPosition().x + tank->getDirection().x, tank->getPosition().y + tank->getDirection().y, tank->getColor(), tank->getBackground(), 0, tank->getAttackDamage(), 0, 0)
+  :MovableObject(tank->getPosition().x, tank->getPosition().y, tank->getColor(), tank->getBackground(), 0, tank->getAttackDamage(), 0, 0)
 {
   setDirection(tank->getDirection());
   UINT TileSize = Game::instance().getTileSize();
   setWidth(TileSize / 4);
   setHeight(TileSize / 4);
-  //setOffset(tank->getOffset().x - tank->getDirection().y*(TileSize / 2), tank->getOffset().y - tank->getDirection().x*(TileSize / 2));
+  setOffset(tank->getOffset().x + tank->getDirection().x*(TileSize / 3), tank->getOffset().y + tank->getDirection().y*(TileSize / 3));
   moveForward();
 }
 

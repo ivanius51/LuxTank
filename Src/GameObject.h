@@ -38,6 +38,7 @@ protected:
   void setCanMove(bool move);
   void setIsWalkable(bool walkable);
   POINT getOldDirection();
+  void setOldDirection();
 private:
   UINT hp_ = 0;
   UINT maxHp_ = 0;
@@ -108,6 +109,7 @@ class MovableObject :public VisualObject
 {
 public:
   MovableObject(int x, int y, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
+  MovableObject(int x, int y, UINT hp = 5, int attackDamage = 0, const std::string& texture = "", COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT width = 0, UINT height = 0);
   void rotate(POINT point);
   void rotateTo(POINT point);
   void moveForward();
@@ -143,6 +145,8 @@ class Tank :public MovableObject
 public:
   Tank(int x, int y, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
   Tank(POINT point, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
+  Tank(int x, int y, const std::string& texture = "", COLORREF color = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
+  Tank(POINT point, const std::string& texture = "", COLORREF color = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
   void shoot();
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
