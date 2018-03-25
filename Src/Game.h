@@ -17,11 +17,12 @@ public:
 
   void initialization(HWND handle, UINT mapSize = MAP_SIZE, UINT tileSize = TILE_SIZE, UINT fpsmax = MAX_FPS);
   void free();
-
+  //main
   Command* input() const;
   void update();
   void draw();
-
+  void test();
+  //world
   Tank* getPlayer();
   Gold* getGold();
   GameObject* getObject(int x, int y);
@@ -38,16 +39,16 @@ public:
   //bool checkCollision(int x, int y);
   //bool checkCollision(POINT point);
   GameObject* collidedWith(GameObject* gameobject);
-
-  void increaseScore();
-
-  UINT getFrameDelay();
-
-  UINT getWindowSize();
   UINT getTileSize();
   UINT getMapSize();
+  void addBullet(std::shared_ptr<Bullet> bullet);
+  //
+  void increaseScore();
+  //
+  UINT getFrameDelay();
+  UINT getWindowSize();
   UINT getTextHeightPx();
-
+  //graphics
   HDC getBufferDc();
   HBITMAP getBuffer();
   HDC getStaticLayerDc();
@@ -85,7 +86,7 @@ private:
   Tank* player_ = nullptr;
   Gold* gold_ = nullptr;
   std::map<POINT, GameObject*, POINTComarator> tiles_;
-  //std::vector<Bullet*> bullets_;
+  std::vector<std::shared_ptr<Bullet>> bullets_;
 
   void generateNewMap();
 

@@ -31,7 +31,7 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     windowSize_ = mapSize * tileSize;
     borderSize_ = 4;
     textHeightPx_ = 32 - borderSize_ * 2 + windowSize_ % 12;
-    
+
     if (fpsmax > 1000)
       frameDelay_ = 1;
     else
@@ -81,7 +81,7 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     bufferDc_ = CreateCompatibleDC(hdc_);
     if (!bufferDc_)
       throw std::runtime_error("can't Create DC Buffer");
-    buffer_ = CreateCompatibleBitmap(hdc_, windowSize_ , windowSize_ );
+    buffer_ = CreateCompatibleBitmap(hdc_, windowSize_, windowSize_);
     if (!buffer_)
       throw std::runtime_error("can't Create Bitmap Buffer");
 
@@ -91,7 +91,7 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     staticLayer_ = CreateCompatibleBitmap(hdc_, windowSize_ + borderSize_ * 2, windowSize_ + borderSize_ * 2);
     if (!buffer_)
       throw std::runtime_error("can't Create Bitmap Buffer");
-    
+
 
     generateNewMap();
 
@@ -140,10 +140,20 @@ Command* Game::input() const
 
 void Game::update()
 {
-  for (std::map<POINT, GameObject*>::iterator i = tiles_.begin(); i != tiles_.end(); i++)
-  {
-    i->second->update();
-  }
+  //std::map<POINT, GameObject*>::iterator
+  //Objects update
+  for (auto it = tiles_.begin(); it != tiles_.end(); it++)
+    it->second->update();
+  for (auto&& bullet : bullets_)
+    bullet->update();
+  //remove collided(stopped) bullets
+  bullets_.erase(
+    std::remove_if(bullets_.begin(), bullets_.end(),
+      //[](MovableObject* movableobject){return !movableobject->isMooving();}
+      //[](std::shared_ptr<Bullet> bullet) {return bullet->isDead(); }
+      [](std::shared_ptr<Bullet> bullet) {return !bullet->isMooving(); }
+  ), bullets_.end());
+
   if (player_->isDead())
     Game::instance().isRunning = false;
 }
@@ -154,6 +164,14 @@ void Game::draw()
   renderObjects();
   drawObjects();
   drawGui();
+}
+
+void Game::test()
+{
+  if (player_)
+  {
+    
+  }
 }
 
 void Game::increaseScore()
@@ -179,7 +197,9 @@ GameObject* Game::getObject(POINT point)
 }
 void Game::deleteObject(GameObject* gameobject)
 {
-  for (std::map<POINT, GameObject*>::iterator it = tiles_.begin(); it != tiles_.end(); it++)
+  //tiles_.erase(std::remove(tiles_.begin(), tiles_.end(), gameobject));
+  //std::map<POINT, GameObject*>::iterator
+  for (auto it = tiles_.begin(); it != tiles_.end(); it++)
     if (it->second == gameobject)
     {
       tiles_.erase(it);
@@ -220,11 +240,11 @@ bool Game::canMoveTo(int x, int y)
 }
 bool Game::isInVisibleDistance(POINT first, POINT second)
 {
-  return (sqrt(SQR(second.x-first.x)+SQR(second.y-first.y))<VISIBLE_DISTANCE);
+  return (sqrt(SQR(second.x - first.x) + SQR(second.y - first.y)) < VISIBLE_DISTANCE);
 }
 bool Game::isIntersection(POINT first, POINT second)
 {
-  return ((first.x==second.x)||(first.y==second.y));
+  return ((first.x == second.x) || (first.y == second.y));
 }
 GameObject* Game::collidedWith(GameObject* gameobject)
 {
@@ -276,6 +296,11 @@ UINT Game::getTileSize()
 UINT Game::getMapSize()
 {
   return mapSize_;
+}
+
+void Game::addBullet(std::shared_ptr<Bullet> bullet)
+{
+  bullets_.push_back(bullet);
 }
 
 UINT Game::getTextHeightPx()
@@ -343,17 +368,15 @@ Game::~Game()
 void Game::generateNewMap()
 {
   POINT point;
-  
+
   for (int i = 0; i < mapSize_; i++)
     for (int j = 0; j < mapSize_ - 2; j++)
-    if (rand() % 100 < 20)
-    {
-      point = {i, j};
-      GameObject* gameobject = new Wall(point);
-      tiles_.insert(std::pair<POINT, GameObject*>({ point }, gameobject));
-    }
-  
-  
+      if (rand() % 100 < 20)
+      {
+        point = { i, j };
+        GameObject* gameobject = new Wall(point);
+        tiles_.insert(std::pair<POINT, GameObject*>({ point }, gameobject));
+      }
 
   point.x = mapSize_ / 2 + 2;
   point.y = mapSize_ - 1;
@@ -376,14 +399,14 @@ void Game::drawBorder()
 {
   HGDIOBJ replaced = SelectObject(staticLayerDc_, staticLayer_);
 
-  BitBlt(staticLayerDc_, 0, 0, windowSize_ + borderSize_*2, windowSize_ + borderSize_ * 2, staticLayerDc_, 0, 0, BLACKNESS);
+  BitBlt(staticLayerDc_, 0, 0, windowSize_ + borderSize_ * 2, windowSize_ + borderSize_ * 2, staticLayerDc_, 0, 0, BLACKNESS);
   HPEN pen = CreatePen(PS_SOLID, 1, COLOR_WINDOW);
   HGDIOBJ oldPen = SelectObject(staticLayerDc_, pen);
   Rectangle(staticLayerDc_, 1, 1, windowSize_ + borderSize_ * 2 - 1, windowSize_ + borderSize_ * 2 - 1);
   SelectObject(staticLayerDc_, oldPen);
   DeleteObject(pen);
   BitBlt(staticLayerDc_, borderSize_, borderSize_, windowSize_, windowSize_, staticLayerDc_, 0, 0, BLACKNESS);
-  
+
   SelectObject(staticLayerDc_, replaced);
 }
 
@@ -398,6 +421,8 @@ void Game::renderObjects()
   {
     i->second->draw();
   }
+  for (auto&& bullet : bullets_)
+    bullet->draw();
 
   //draw buffer to frame
   BitBlt(staticLayerDc_, borderSize_, borderSize_, windowSize_, windowSize_, bufferDc_, 0, 0, SRCPAINT);

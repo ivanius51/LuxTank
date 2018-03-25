@@ -12,6 +12,7 @@ int main()
 {
   //can edit settings and load it from file
   Game::instance().initialization(GetConsoleWindow(), MAP_SIZE, TILE_SIZE, MAX_FPS);
+
   while (Game::instance().isRunning)
   {
     int startTime = GetTickCount();
@@ -21,6 +22,12 @@ int main()
       if (UserInputCommand != nullptr)
         UserInputCommand->execute();
     }
+
+    if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+    {
+      Game::instance().test();
+    }
+
     Game::instance().update();
     Game::instance().draw();
 

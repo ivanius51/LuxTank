@@ -23,7 +23,7 @@ public:
   bool canMove();
   bool isWalkable();
   bool isDead();
-  virtual void takeDamage(int damage);
+  void takeDamage(int damage);
   virtual void takeDamage(int damage, POINT damageDirection) = 0;
   virtual void draw() = 0;
   virtual void drawTo(HDC hdc, HBITMAP hbitmap) = 0;
@@ -129,6 +129,7 @@ public:
   void update();
 protected:
 private:
+  //std::weak_ptr<Tank> shooter_;
   Tank * shooter_ = nullptr;
 };
 class Tank :public MovableObject
@@ -144,7 +145,7 @@ public:
   bool isPlayer();
 protected:
 private:
-  Bullet * bullet_ = nullptr;
+  //Bullet * bullet_ = nullptr;
   UINT ShootTime_;
   bool isenemy_ = false;
   bool isplayer_ = false;
