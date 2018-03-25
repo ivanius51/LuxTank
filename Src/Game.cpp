@@ -17,7 +17,7 @@ Game& Game::instance()
   return *instance;
 }
 
-void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
+void Game::initialization(HWND handle, bool topmost, UINT mapSize, UINT tileSize, UINT fpsmax)
 {
   if (((tileSize & (tileSize - 1)) != 0) || tileSize < 16 || tileSize > 256)
     throw std::invalid_argument("tile size must be a power of 2 and hightest that 8 and lower than 256");
@@ -25,6 +25,8 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
   if (handle != INVALID_HANDLE_VALUE)
   {
     handle_ = handle;
+    ShowWindow(handle, SW_HIDE);
+    RECT Screen, Window, Client;
     hdc_ = GetDC(handle_);
     mapSize_ = mapSize;
     tileSize_ = tileSize;
@@ -32,7 +34,7 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     borderSize_ = 4;
     textHeightPx_ = 32 - borderSize_ * 2 + windowSize_ % 12;
 
-    if (fpsmax > 1000)
+    if (fpsmax > 500)
       frameDelay_ = 1;
     else
       frameDelay_ = int(1000 / fpsmax);
@@ -62,6 +64,13 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
     SetConsoleScreenBufferSize(consoleOutputHandle, size);
     SMALL_RECT windowinfo = { 0, 0, SHORT(x - 1), SHORT(y - 1) };
     SetConsoleWindowInfo(consoleOutputHandle, TRUE, &windowinfo);
+
+    //HMENU systemMenu = GetSystemMenu(handle, false);
+    //DeleteMenu(systemMenu, SC_CLOSE, MF_BYCOMMAND);
+    //DeleteMenu(systemMenu, SC_MINIMIZE, MF_BYCOMMAND);
+    //DeleteMenu(systemMenu, SC_MAXIMIZE, MF_BYCOMMAND);
+    //DeleteMenu(systemMenu, SC_SIZE, MF_BYCOMMAND);
+
     //prepare window
     system("cls");
     SetBkMode(hdc_, TRANSPARENT);
@@ -95,6 +104,18 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
 
     generateNewMap();
 
+    GetWindowRect(handle, &Window);
+    GetWindowRect(GetDesktopWindow(), &Screen);
+    GetClientRect(handle, &Client);
+
+    MoveWindow(handle, (Screen.right / 2) - (Window.right - Window.left) / 2, (Screen.bottom / 2) - (Window.bottom - Window.top) / 2, Window.right - Window.left, textHeightPx_ + windowSize_ + borderSize_ * 2, 1);
+    SetWindowLong(handle, GWL_STYLE, WS_POPUP);
+    SetWindowRgn(handle, CreateRectRgn(Client.left + borderSize_ / 2, Client.top + borderSize_ / 2, windowSize_ + borderSize_ * 2 + borderSize_ / 2, textHeightPx_ + windowSize_ + borderSize_ * 2), TRUE);
+    //fullscreen TOPMOST
+    if (topmost)
+      SetWindowPos(handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    ShowWindow(handle, SW_RESTORE);
+
     startTime_ = GetTickCount();
   }
   else
@@ -104,11 +125,21 @@ void Game::initialization(HWND handle, UINT mapSize, UINT tileSize, UINT fpsmax)
 void Game::free()
 {
   ReleaseDC(handle_, hdc_);
-  DeleteDC(textLayerDc_);
-  DeleteObject(textLayer_);
+  if (textLayerDc_)
+    DeleteDC(textLayerDc_);
+  if (textLayer_)
+    DeleteObject(textLayer_);
+  if (staticLayerDc_)
+    DeleteDC(staticLayerDc_);
+  if (staticLayer_)
+    DeleteObject(staticLayer_);
+  if (bufferDc_)
+    DeleteDC(bufferDc_);
+  if (buffer_)
+    DeleteObject(buffer_);
 }
 
-Command* Game::input() const
+Command* Game::input()
 {
   Command* command = nullptr;
   if (GetAsyncKeyState(VK_UP) & 0x8000)
@@ -133,7 +164,7 @@ Command* Game::input() const
   }
   if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
   {
-    return nullptr;
+    stopGame();
   }
   return command;
 }
@@ -143,7 +174,8 @@ void Game::update()
   //std::map<POINT, GameObject*>::iterator
   //Objects update
   for (auto it = tiles_.begin(); it != tiles_.end(); it++)
-    it->second->update();
+    if (it->second)
+      it->second->update();
   for (auto&& bullet : bullets_)
     bullet->update();
   //remove collided(stopped) bullets
@@ -155,7 +187,7 @@ void Game::update()
   ), bullets_.end());
 
   if (player_->isDead())
-    Game::instance().isRunning = false;
+    stopGame();
 }
 
 void Game::draw()
@@ -170,8 +202,18 @@ void Game::test()
 {
   if (player_)
   {
-    
+
   }
+}
+
+void Game::stopGame()
+{
+  isRunning_ = false;
+}
+
+bool Game::isRunning()
+{
+  return isRunning_;
 }
 
 void Game::increaseScore()
@@ -187,7 +229,7 @@ Gold* Game::getGold()
 {
   return gold_;
 }
-GameObject* Game::getObject(POINT point)
+std::shared_ptr<GameObject> Game::getObject(POINT point)
 {
   auto tile = tiles_.find(point);
   if (tile != tiles_.end())
@@ -195,18 +237,18 @@ GameObject* Game::getObject(POINT point)
   else
     return nullptr;
 }
-void Game::deleteObject(GameObject* gameobject)
+void Game::deleteObject(const GameObject* gameobject)
 {
   //tiles_.erase(std::remove(tiles_.begin(), tiles_.end(), gameobject));
   //std::map<POINT, GameObject*>::iterator
   for (auto it = tiles_.begin(); it != tiles_.end(); it++)
-    if (it->second == gameobject)
+    if (it->second.get() == gameobject)
     {
       tiles_.erase(it);
       break;
     }
 }
-GameObject* Game::getObject(int x, int y)
+std::shared_ptr<GameObject> Game::getObject(int x, int y)
 {
   POINT point;
   point.x = x;
@@ -215,7 +257,7 @@ GameObject* Game::getObject(int x, int y)
 }
 bool Game::isWalkable(int x, int y)
 {
-  GameObject* gameobject = Game::getObject(x, y);
+  GameObject* gameobject = Game::getObject(x, y).get();
   return ((!gameobject) || gameobject->isWalkable());
 }
 bool Game::isWalkable(POINT point)
@@ -256,7 +298,7 @@ GameObject* Game::collidedWith(GameObject* gameobject)
   POINT Offset = dynamic_cast<VisualObject*>(gameobject)->getOffset();
   Position.x += (Offset.x + (Direction.x * tileSize_ / 2)) / 2;
   Position.y += (Offset.y + (Direction.y * tileSize_ / 2)) / 2;
-  GameObject* interact = getObject(Position);
+  GameObject* interact = getObject(Position).get();
   if (!interact || !dynamic_cast<VisualObject*>(interact))
     return nullptr;
 
@@ -328,33 +370,9 @@ HBITMAP Game::getStaticLayer()
   return staticLayer_;
 }
 
-void Game::drawBitmap(HDC hdc, int x, int y, HBITMAP hBitmap, bool transparent)
-{
-  if (hBitmap)
-  {
-    HDC hMemDC = CreateCompatibleDC(hdc_);
-    HGDIOBJ replaced = SelectObject(hMemDC, hBitmap);
-    if (replaced)
-    {
-      //SetMapMode(hMemDC, GetMapMode(hdc));
-      BITMAP bitmap;
-      GetObject(hBitmap, sizeof(BITMAP), &bitmap);
-      //POINT ptSize = { bitmap.bmWidth , bitmap.bmHeight };
-      //DPtoLP(hdc, &ptSize, 1);
-      if (transparent)
-        BitBlt(hdc, x, y, bitmap.bmWidth, bitmap.bmHeight, hMemDC, 0, 0, SRCPAINT);
-      else
-        BitBlt(hdc, x, y, bitmap.bmWidth, bitmap.bmHeight, hMemDC, 0, 0, SRCCOPY);
-
-      SelectObject(hMemDC, replaced);
-    }
-    DeleteDC(hMemDC);
-  }
-}
-
 void Game::drawBitmap(int x, int y, HBITMAP hBitmap, bool transparent)
 {
-  Game::drawBitmap(hdc_, x, y, hBitmap, transparent);
+  gdi::drawBitmap(hdc_, x, y, hBitmap, transparent);
 }
 
 Game::Game()
@@ -374,7 +392,7 @@ void Game::generateNewMap()
       if (rand() % 100 < 20)
       {
         point = { i, j };
-        GameObject* gameobject = new Wall(point);
+        GameObject* gameobject = new Wall(point, 5, 0, WALL_TEXTURE);
         tiles_.insert(std::pair<POINT, GameObject*>({ point }, gameobject));
       }
 
@@ -386,12 +404,12 @@ void Game::generateNewMap()
   for (int i = int(mapSize_ / 2 - 1); i <= int(mapSize_ / 2 + 1); i++)
   {
     point = { i, int(mapSize_ - 2) };
-    tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point)));
+    tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point, 5, 0, WALL_TEXTURE)));
     point = { i, int(mapSize_ - 1) };
     if (i == (mapSize_ / 2))
       tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Gold(point)));
     else
-      tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point)));
+      tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point, 5, 0, WALL_TEXTURE)));
   }
 }
 
@@ -417,7 +435,8 @@ void Game::renderObjects()
 
   //clear buufer
   BitBlt(bufferDc_, 0, 0, windowSize_, windowSize_, bufferDc_, 0, 0, BLACKNESS);
-  for (std::map<POINT, GameObject*>::const_iterator i = tiles_.begin(); i != tiles_.end(); i++)
+  //std::map<POINT, GameObject*>::const_iterator
+  for (auto i = tiles_.begin(); i != tiles_.end(); i++)
   {
     i->second->draw();
   }
@@ -434,7 +453,7 @@ void Game::renderObjects()
 void Game::drawObjects()
 {
   //draw frame
-  drawBitmap(hdc_, 0, textHeightPx_, staticLayer_, false);
+  gdi::drawBitmap(hdc_, 0, textHeightPx_, staticLayer_, false);
 }
 
 void Game::drawGui()
@@ -452,7 +471,8 @@ void Game::drawGui()
   SIZE textsize;
   GetTextExtentPoint32(textLayerDc_, strOut.c_str(), strOut.length(), &textsize);
   TextOut(textLayerDc_, windowSize_ + borderSize_ * 2 - textsize.cx - borderSize_, borderSize_, strOut.c_str(), strOut.length());
+
+  BitBlt(hdc_, 0, 0, windowSize_ + borderSize_ * 2, textHeightPx_, textLayerDc_, 0, 0, SRCCOPY);
   //deselect a textLayer_ bitmap for use int other DC
   SelectObject(textLayerDc_, replaced);
-  drawBitmap(hdc_, 0, 0, textLayer_, false);
 }

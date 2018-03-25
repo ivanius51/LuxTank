@@ -15,10 +15,68 @@ COLORREF ALLY_COLOR = RGB(0, 128, 0);
 COLORREF ENEMY_COLOR = RGB(128, 0, 0);
 COLORREF COLOR_GREY = RGB(128, 128, 128);
 COLORREF COLOR_BLACK = 0;
+const std::string WALL_TEXTURE = "res/wall.bmp";
 POINT DEFAULT_DIRECTION = { 0, -1 };
 
 inline int SQR(int x)
 {
-  return x*x;
+  return x * x;
+}
+namespace gdi {
+  void drawBitmap(HDC hdc, int x, int y, HBITMAP hBitmap, bool transparent)
+  {
+    if (hBitmap)
+    {
+      HDC hDC = CreateCompatibleDC(hdc);
+      HGDIOBJ replaced = SelectObject(hDC, hBitmap);
+      if (replaced)
+      {
+        //SetMapMode(hMemDC, GetMapMode(hdc));
+        BITMAP bitmap;
+        GetObject(hBitmap, sizeof(BITMAP), &bitmap);
+        //POINT ptSize = { bitmap.bmWidth , bitmap.bmHeight };
+        //DPtoLP(hdc, &ptSize, 1);
+        if (transparent)
+          BitBlt(hdc, x, y, bitmap.bmWidth, bitmap.bmHeight, hDC, 0, 0, SRCPAINT);
+        else
+          BitBlt(hdc, x, y, bitmap.bmWidth, bitmap.bmHeight, hDC, 0, 0, SRCCOPY);
+
+        SelectObject(hDC, replaced);
+      }
+      DeleteDC(hDC);
+    }
+  }
+  void drawBitmap(HDC hdc, int x, int y, int width, int height, HBITMAP hBitmap, bool transparent)
+  {
+    if (hBitmap)
+    {
+      HDC hDC = CreateCompatibleDC(hdc);
+      HGDIOBJ replaced = SelectObject(hDC, hBitmap);
+      if (replaced)
+      {
+        //SetMapMode(hMemDC, GetMapMode(hdc));
+        BITMAP bitmap;
+        GetObject(hBitmap, sizeof(BITMAP), &bitmap);
+        //POINT ptSize = { bitmap.bmWidth , bitmap.bmHeight };
+        //DPtoLP(hdc, &ptSize, 1);
+        if (bitmap.bmWidth == width && bitmap.bmHeight == height)
+        {
+          if (transparent)
+            BitBlt(hdc, x, y, bitmap.bmWidth, bitmap.bmHeight, hDC, 0, 0, SRCPAINT);
+          else
+            BitBlt(hdc, x, y, bitmap.bmWidth, bitmap.bmHeight, hDC, 0, 0, SRCCOPY);
+        }
+        else
+        {
+          if (transparent)
+            StretchBlt(hdc, x, y, width, height, hDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, SRCPAINT);
+          else
+            StretchBlt(hdc, x, y, width, height, hDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, SRCCOPY);
+        }
+        SelectObject(hDC, replaced);
+      }
+      DeleteDC(hDC);
+    }
+  }
 }
 

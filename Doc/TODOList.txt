@@ -1,4 +1,7 @@
-fix all memory leaks with use smart pointers for objects.
+Add enemy tanks.
+Make AI for enemy tanks.
+Finish UML Class diagram, seq diagram.
+fix all memory leaks with use smart pointers for objects. - first try are sucess 25%. (unique_ptr - single ownership(Exclusive) of resource; shared_ptr - share ownership of resource (Many to single); weak_ptr - if refer from multiple places)
 add destructors where use objects and free memory.
 Move tiles,size ets Game::methods to new World class.
 DO NOT Use pointers with local objects - try use reference for this and allocate in stack.

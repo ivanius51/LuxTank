@@ -16,8 +16,12 @@ template <typename T> int sign(T value)
 {
   return (value > 0) ? 1 : ((value < 0) ? -1 : 0);
 };
-
 extern inline int SQR(int x);
+
+namespace gdi {
+  extern void drawBitmap(HDC hdc, int x, int y, HBITMAP hBitmap, bool transparent = false);
+  extern void drawBitmap(HDC hdc, int x, int y, int width, int height, HBITMAP hBitmap, bool transparent = false);
+}
 
 extern int MAX_FPS;
 extern int MAP_SIZE;
@@ -32,6 +36,7 @@ extern COLORREF ALLY_COLOR;
 extern COLORREF ENEMY_COLOR;
 extern COLORREF COLOR_GREY;
 extern COLORREF COLOR_BLACK;
+extern const std::string WALL_TEXTURE;
 extern POINT DEFAULT_DIRECTION;
 
 

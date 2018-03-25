@@ -134,6 +134,19 @@ VisualObject::VisualObject(int x, int y, UINT hp, int attackDamage, COLORREF col
     height_ = Game::instance().getTileSize();
 }
 
+VisualObject::VisualObject(int x, int y, UINT hp, int attackDamage, COLORREF color, COLORREF background, const std::string & texture, UINT width, UINT height)
+  :VisualObject(x, y, hp, attackDamage, color, background, width, height)
+{
+  if (texture != "")
+    texture_ = static_cast<HBITMAP>(LoadImage(NULL, texture.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
+}
+
+VisualObject::~VisualObject()
+{
+  if (texture_)
+    DeleteObject(texture_);
+}
+
 COLORREF VisualObject::getColor()
 {
   return color_;
@@ -157,6 +170,11 @@ UINT VisualObject::getHeight()
 POINT VisualObject::getOffset()
 {
   return offset_;
+}
+
+HBITMAP VisualObject::getTexture()
+{
+  return texture_;
 }
 
 void VisualObject::takeDamage(int damage, POINT damageDirection)
@@ -196,13 +214,24 @@ POINT VisualObject::getScreenPosition()
 }
 
 Wall::Wall(int x, int y, UINT hp, int attackDamage, COLORREF color, COLORREF background, UINT width, UINT height)
-  :VisualObject(x, y, hp, attackDamage, color, background, width, height)
+  :VisualObject(x, y, hp, attackDamage, color, background, "", width, height)
 {
   setIsWalkable(false);
 }
 
 Wall::Wall(POINT point, UINT hp, int attackDamage, COLORREF color, COLORREF background, UINT width, UINT height)
   : Wall(point.x, point.y, hp, attackDamage, color, background, width, height)
+{
+}
+
+Wall::Wall(int x, int y, UINT hp, int attackDamage, const std::string & texture, UINT width, UINT height)
+  : VisualObject(x, y, hp, attackDamage, COLOR_GREY, COLOR_GREY, texture, width, height)
+{
+  setIsWalkable(false);
+}
+
+Wall::Wall(POINT point, UINT hp, int attackDamage, const std::string & texture, UINT width, UINT height)
+  : Wall(point.x, point.y, hp, attackDamage, texture, width, height)
 {
 }
 
@@ -233,25 +262,30 @@ void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
     POINT Position = getScreenPosition();
     int stage = 0;
     if (getHP() < getMaxHP())
-      stage = int(TileSize / (getMaxHP()-1));
-     
-    Rectangle(hdc, 
-      Position.x, Position.y, 
-      Position.x + TileSize, Position.y + TileSize);
+      stage = int(TileSize / (getMaxHP() - 1));
 
-    SelectObject(hdc, GetStockObject(DC_BRUSH));
-    SetDCBrushColor(hdc, getBackground());
+    if (getTexture())
+    {
+      gdi::drawBitmap(hdc, Position.x, Position.y, TileSize, TileSize, getTexture());
+      //destuctions 
+      BitBlt(hdc, Position.x, Position.y, Destrucions.left * stage, TileSize, hdc, 0, 0, BLACKNESS);
+      BitBlt(hdc, Position.x, Position.y, TileSize, Destrucions.top * stage, hdc, 0, 0, BLACKNESS);
+      BitBlt(hdc, Position.x + TileSize - Destrucions.right * stage, Position.y, Destrucions.right * stage, TileSize, hdc, 0, 0, BLACKNESS);
+      BitBlt(hdc, Position.x, Position.y + TileSize - Destrucions.bottom * stage, TileSize, Destrucions.bottom * stage, hdc, 0, 0, BLACKNESS);
+    }
+    else
+    {
+      Rectangle(hdc,
+        Position.x, Position.y,
+        Position.x + TileSize, Position.y + TileSize);
 
-    Rectangle(hdc,
-      Position.x + Destrucions.left * stage, Position.y + Destrucions.top * stage,
-      Position.x + TileSize - Destrucions.right * stage, Position.y + TileSize - Destrucions.bottom * stage);
+      SelectObject(hdc, GetStockObject(DC_BRUSH));
+      SetDCBrushColor(hdc, getBackground());
 
-    HGDIOBJ TransperrantBrush = GetStockObject(NULL_BRUSH);
-    SelectObject(hdc, TransperrantBrush);
-
-    Ellipse(hdc,
-      Position.x + Destrucions.left * stage, Position.y + Destrucions.top * stage,
-      Position.x + TileSize - Destrucions.right * stage, Position.y + TileSize - Destrucions.bottom * stage);
+      Rectangle(hdc,
+        Position.x + Destrucions.left * stage, Position.y + Destrucions.top * stage,
+        Position.x + TileSize - Destrucions.right * stage, Position.y + TileSize - Destrucions.bottom * stage);
+    }
 
     SelectObject(hdc, oldBrush);
     DeleteObject(brush);
@@ -267,7 +301,7 @@ void Wall::update()
   if (isDead())
   {
     Game::instance().deleteObject(this);
-    delete this;
+    //delete this;
   }
 }
 
@@ -294,7 +328,7 @@ void Gold::drawTo(HDC hdc, HBITMAP hbitmap)
 void Gold::update()
 {
   if (isDead())
-    Game::instance().isRunning = false;
+    Game::instance().stopGame();
 }
 
 MovableObject::MovableObject(int x, int y, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
@@ -376,12 +410,12 @@ void Tank::shoot()
   //  delete bullet_;
   //}
   //if (!bullet_ || !bullet_->isMooving())
-    if ((GetTickCount() - ShootTime_) > SHOOT_DELAY)
-    {
-      ShootTime_ = GetTickCount();
-      Game::instance().addBullet(std::make_shared<Bullet>(this));
-      //bullet_ = new Bullet(this);
-    }
+  if ((GetTickCount() - ShootTime_) > SHOOT_DELAY)
+  {
+    ShootTime_ = GetTickCount();
+    Game::instance().addBullet(std::make_shared<Bullet>(this));
+    //bullet_ = new Bullet(this);
+  }
 }
 
 void Tank::draw()
@@ -418,7 +452,7 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
       ScreenPosition.x + center + width * ((getDirection().x > 0) ? 1 : 2), ScreenPosition.y + center + width * ((getDirection().y > 0) ? 1 : 2));
 
     Ellipse(hdc,
-      ScreenPosition.x + center - width, ScreenPosition.y + center - width ,
+      ScreenPosition.x + center - width, ScreenPosition.y + center - width,
       ScreenPosition.x + center + width, ScreenPosition.y + center + width);
 
     width = 2;
@@ -605,9 +639,9 @@ void Bullet::update()
     else
     {
       stop();
-      GameObject* gameobject = Game::instance().getObject(NewPosition);
+      GameObject* gameobject = Game::instance().getObject(NewPosition).get();
       if (gameobject)
-        gameobject->takeDamage(getAttackDamage(),getDirection());
+        gameobject->takeDamage(getAttackDamage(), getDirection());
     }
   }
 }

@@ -13,21 +13,24 @@ class Game
 {
 public:
   static Game& instance();
-  bool isRunning = true;
 
-  void initialization(HWND handle, UINT mapSize = MAP_SIZE, UINT tileSize = TILE_SIZE, UINT fpsmax = MAX_FPS);
+  void initialization(HWND handle, bool topmost, UINT mapSize = MAP_SIZE, UINT tileSize = TILE_SIZE, UINT fpsmax = MAX_FPS);
   void free();
   //main
-  Command* input() const;
+  Command* input();
   void update();
   void draw();
   void test();
+  //
+  void stopGame();
+  bool isRunning();
+  void increaseScore();
   //world
   Tank* getPlayer();
   Gold* getGold();
-  GameObject* getObject(int x, int y);
-  GameObject* getObject(POINT point);
-  void deleteObject(GameObject* gameobject);
+  std::shared_ptr<GameObject> getObject(int x, int y);
+  std::shared_ptr<GameObject> getObject(POINT point);
+  void deleteObject(const GameObject* gameobject);
   bool isWalkable(int x, int y);
   bool isWalkable(POINT point);
   bool isValidPosition(POINT point);
@@ -43,8 +46,6 @@ public:
   UINT getMapSize();
   void addBullet(std::shared_ptr<Bullet> bullet);
   //
-  void increaseScore();
-  //
   UINT getFrameDelay();
   UINT getWindowSize();
   UINT getTextHeightPx();
@@ -53,7 +54,6 @@ public:
   HBITMAP getBuffer();
   HDC getStaticLayerDc();
   HBITMAP getStaticLayer();
-  void drawBitmap(HDC hdc, int x, int y, HBITMAP hBitmap, bool transparent = false);
   void drawBitmap(int x, int y, HBITMAP hBitmap, bool transparent = false);
 protected:
 private:
@@ -82,10 +82,11 @@ private:
   UINT textHeightPx_ = 0;
   UINT startTime_ = 0;
 
+  bool isRunning_ = true;
   UINT score_ = 0;
   Tank* player_ = nullptr;
   Gold* gold_ = nullptr;
-  std::map<POINT, GameObject*, POINTComarator> tiles_;
+  std::map<POINT, std::shared_ptr<GameObject>, POINTComarator> tiles_;
   std::vector<std::shared_ptr<Bullet>> bullets_;
 
   void generateNewMap();

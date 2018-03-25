@@ -54,26 +54,30 @@ class VisualObject :public GameObject
 {
 public:
   VisualObject(int x, int y, UINT hp, int attackDamage, COLORREF color = 0, COLORREF background = 0, UINT width = 0, UINT height = 0);
+  VisualObject(int x, int y, UINT hp, int attackDamage, COLORREF color = 0, COLORREF background = 0, const std::string& texture = "", UINT width = 0, UINT height = 0);
+  ~VisualObject();
   COLORREF getColor();
   COLORREF getBackground();
   UINT getWidth();
   UINT getHeight();
   POINT getScreenPosition();
   POINT getOffset();
+  HBITMAP getTexture();
   void takeDamage(int damage, POINT damageDirection);
 protected:
-  HDC targetdc_;
-  HBITMAP targeBitmap_;
+  HDC targetdc_ = nullptr;
+  HBITMAP targeBitmap_ = nullptr;
   RECT Destrucions = { 0, 0, 0, 0 };
   void setOffset(int x, int y);
   void setOffset(POINT point);
   void setWidth(UINT width);
   void setHeight(UINT height);
 private:
-  COLORREF color_;
-  COLORREF background_;
-  UINT width_;
-  UINT height_;
+  COLORREF color_ = 0;
+  COLORREF background_ = 0;
+  HBITMAP texture_ = nullptr;
+  UINT width_ = 0;
+  UINT height_ = 0;
   POINT offset_ = { 0,0 };
 };
 class Wall :public VisualObject
@@ -81,6 +85,8 @@ class Wall :public VisualObject
 public:
   Wall(int x, int y, UINT hp = 5, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
   Wall(POINT point, UINT hp = 5, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
+  Wall(int x, int y, UINT hp = 5, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, UINT width = 0, UINT height = 0);
+  Wall(POINT point, UINT hp = 5, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, UINT width = 0, UINT height = 0);
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
@@ -130,7 +136,7 @@ public:
 protected:
 private:
   //std::weak_ptr<Tank> shooter_;
-  Tank * shooter_ = nullptr;
+  //Tank * shooter_ = nullptr;
 };
 class Tank :public MovableObject
 {
