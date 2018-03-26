@@ -3,7 +3,6 @@
 #define GAME_H
 
 #include <Windows.h>
-#include <map>
 #include <memory>
 
 #include "GameObject.h"
@@ -25,12 +24,12 @@ public:
   void stopGame();
   bool isRunning();
   void increaseScore();
-  //world
+  //world/map functions
   GameObject* getPlayer();
   GameObject* getGold();
   GameObject* getObject(int x, int y);
   GameObject* getObject(POINT point);
-  void deleteObject(const GameObject* gameobject);
+  bool deleteObject(GameObject* gameobject);
   bool isWalkable(int x, int y);
   bool isWalkable(POINT point);
   bool isValidPosition(POINT point);
@@ -86,8 +85,7 @@ private:
   UINT score_ = 0;
   std::weak_ptr<GameObject> player_;
   std::weak_ptr<GameObject> gold_;
-  std::map<POINT, std::shared_ptr<GameObject>, PointComarator> tiles_;
-  //std::vector<std::shared_ptr<GameObject>> tiles_;
+  std::vector<std::shared_ptr<GameObject>> tiles_;
   std::vector<std::shared_ptr<Bullet>> bullets_;
 
   void generateNewMap();

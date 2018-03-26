@@ -3,7 +3,6 @@
 #include "stdafx.h"
 #include <algorithm>
 #include <string>
-#include <map>
 
 #include <math.h>
 
@@ -142,29 +141,32 @@ void Game::free()
 Command* Game::input()
 {
   Command* command = nullptr;
-  if (GetAsyncKeyState(VK_UP) & 0x8000)
+  if (getPlayer())
   {
-    command = new RotateCommand(getPlayer(), 0, -1);
-  }
-  if (GetAsyncKeyState(VK_DOWN) & 0x8000)
-  {
-    command = new RotateCommand(getPlayer(), 0, 1);
-  }
-  if (GetAsyncKeyState(VK_LEFT) & 0x8000)
-  {
-    command = new RotateCommand(getPlayer(), -1, 0);
-  }
-  if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
-  {
-    command = new RotateCommand(getPlayer(), 1, 0);
-  }
-  if (GetAsyncKeyState(VK_SPACE) & 0x8000)
-  {
-    command = new FireCommand(getPlayer());
-  }
-  if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
-  {
-    stopGame();
+    if (GetAsyncKeyState(VK_UP) & 0x8000)
+    {
+      command = new RotateCommand(getPlayer(), 0, -1);
+    }
+    if (GetAsyncKeyState(VK_DOWN) & 0x8000)
+    {
+      command = new RotateCommand(getPlayer(), 0, 1);
+    }
+    if (GetAsyncKeyState(VK_LEFT) & 0x8000)
+    {
+      command = new RotateCommand(getPlayer(), -1, 0);
+    }
+    if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
+    {
+      command = new RotateCommand(getPlayer(), 1, 0);
+    }
+    if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+    {
+      command = new FireCommand(getPlayer());
+    }
+    if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
+    {
+      stopGame();
+    }
   }
   return command;
 }
@@ -173,9 +175,9 @@ void Game::update()
 {
   //std::map<POINT, GameObject*>::iterator
   //Objects update
-  for (auto it = tiles_.begin(); it != tiles_.end(); it++)
-    if (it->second)
-      it->second->update();
+  for (auto&& tile : tiles_)
+    tile->update();
+
   for (auto&& bullet : bullets_)
     bullet->update();
   //remove collided(stopped) bullets
@@ -186,6 +188,12 @@ void Game::update()
 
   if (getPlayer() && getPlayer()->isDead() || getGold() && getGold()->isDead())
     stopGame();
+
+  //remove Died(destroyed) objects
+  tiles_.erase(
+    std::remove_if(tiles_.begin(), tiles_.end(),
+      [](std::shared_ptr<GameObject> object) {return object->isDead(); }
+  ), tiles_.end());
 }
 
 void Game::draw()
@@ -198,7 +206,7 @@ void Game::draw()
 
 void Game::test()
 {
-  
+
 }
 
 void Game::stopGame()
@@ -226,23 +234,33 @@ GameObject* Game::getGold()
 }
 GameObject* Game::getObject(POINT point)
 {
-  auto tile = tiles_.find(point);//map
-  //auto tile = std::find_if(tiles_.begin(), tiles_.end(), CompareGameObjectPoint(point));
+  auto tile = std::find_if(tiles_.begin(), tiles_.end(), 
+      [&point](std::shared_ptr<GameObject> object) 
+      {return object->getPosition().x == point.x && object->getPosition().y == point.y; }//CompareGameObjectPoint(point)
+  );
   if (tile != tiles_.end())
-    return tile->second.get();
+    return tile->get();
   else
     return nullptr;
 }
-void Game::deleteObject(const GameObject* gameobject)
+bool Game::deleteObject(GameObject* gameobject)
 {
-  //tiles_.erase(std::remove(tiles_.begin(), tiles_.end(), gameobject));
-  //std::map<POINT, GameObject*>::iterator
-  for (auto it = tiles_.begin(); it != tiles_.end(); it++)
-    if (it->second.get() == gameobject)
-    {
-      tiles_.erase(it);
-      break;
-    }
+  auto tile = std::find_if(tiles_.begin(), tiles_.end(),
+    [&gameobject](std::shared_ptr<GameObject> object)
+    {return object.get() == gameobject; }
+  );
+  if (tile != tiles_.end())
+  {
+    tiles_.erase(tile);
+    return true;
+  }
+  return false;
+  //for (auto it = tiles_.begin(); it != tiles_.end(); it++)
+  //  if (it->get() == gameobject)
+  //  {
+  //    tiles_.erase(it);
+  //    break;
+  //  }
 }
 GameObject* Game::getObject(int x, int y)
 {
@@ -391,7 +409,7 @@ void Game::generateNewMap()
         point = { i, j };
         gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE));
         //gameobject.get()->bindUpdateCallback([](GameObject& gameobject) {if (gameobject.isDead()) Game::instance().stopGame(); });
-        tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+        tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
       }
   //Default player position
   point.x = mapSize_ / 2 + 2;
@@ -399,37 +417,37 @@ void Game::generateNewMap()
   gameobject.reset(new Tank(point, TANK_GREEN_1, ALLY_COLOR, PLAYER_LIVES));
   player_ = gameobject;
   dynamic_cast<Tank*>(player_.lock().get())->setPlayer(true);
-  tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+  tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
 
   for (int i = 0; i <= int(mapSize_ / 2 + 1); i++)
     for (int j = 0; j < mapSize_; j++)
     {
       point = { j, i };
-      if ((i % 2 == 0) && (j % 2 == 0) && (rand() % 100 < 10) && (tiles_.end() == tiles_.find(point)))
+      if ((i % 2 == 0) && (j % 2 == 0) && (rand() % 100 < 20) && (!getObject(point)))
       {
         gameobject.reset(new Tank(point, TANK_BLUE_1, ENEMY_COLOR, 1));
         dynamic_cast<Tank*>(gameobject.get())->setEnemy(true);
-        tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+        tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
       }
-    }      
+    }
 
   for (int i = int(mapSize_ / 2 - 1); i <= int(mapSize_ / 2 + 1); i++)
   {
     point = { i, int(mapSize_ - 2) };
     gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE));
-    tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+    tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
     point = { i, int(mapSize_ - 1) };
     if (i == (mapSize_ / 2))
     {
       gameobject.reset(new Wall(point, GOLD_HP, 0, COLOR_YELLOW / 2, COLOR_YELLOW));
       gold_ = gameobject;
       gameobject.get()->bindUpdateCallback([](GameObject& gameobject) {if (gameobject.isDead()) Game::instance().stopGame(); });
-      tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+      tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
     }
     else
     {
       gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE));
-      tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+      tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
     }
   }
 }
@@ -459,17 +477,17 @@ void Game::renderObjects()
   //std::map<POINT, GameObject*>::const_iterator
   for (auto&& bullet : bullets_)
     bullet->draw();
-  for (auto i = tiles_.begin(); i != tiles_.end(); i++)
+  for (auto&& object : tiles_)
   {
-    if (!i->second.get()->canMove())
-      i->second->draw();
+    if (!object->canMove())
+      object->draw();
   }
-  for (auto i = tiles_.begin(); i != tiles_.end(); i++)
+  for (auto&& object : tiles_)
   {
-    if (i->second.get()->canMove())
-      i->second->draw();
+    if (object->canMove())
+      object->draw();
   }
- 
+
   //draw buffer to frame
   BitBlt(staticLayerDc_, borderSize_, borderSize_, windowSize_, windowSize_, bufferDc_, 0, 0, SRCPAINT);
 
@@ -494,7 +512,7 @@ void Game::drawGui()
   UINT Min = ((Time / MSEC_IN_SEC / SEC_IN_MIN) % SEC_IN_MIN);
   std::string strOut = "Time " + std::to_string(Min) + ":" + std::to_string(Sec);
   TextOut(textLayerDc_, borderSize_, borderSize_, strOut.c_str(), strOut.length());
-  strOut = "Score:" + std::to_string(score_) + " Lives: " + std::to_string(getPlayer()->getHP());
+  strOut = "Score:" + std::to_string(score_) + " Lives: " + std::to_string(getPlayer()? getPlayer()->getHP(): 0);
   SIZE textsize;
   GetTextExtentPoint32(textLayerDc_, strOut.c_str(), strOut.length(), &textsize);
   TextOut(textLayerDc_, windowSize_ + borderSize_ * 2 - textsize.cx - borderSize_, borderSize_, strOut.c_str(), strOut.length());

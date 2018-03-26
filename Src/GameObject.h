@@ -33,7 +33,7 @@ public:
   void bindUpdateCallback(std::function<void(GameObject&)> function);
   void updateCallback(GameObject& gameobject);
   void updateCallback();
-
+  bool isSamePosition(const POINT & point);
 protected:
   void setPosition(int x, int y);
   void setPosition(POINT point);
@@ -131,11 +131,12 @@ public:
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
+  bool hitTest(POINT position);
 protected:
 private:
   UINT speed_;
   //std::weak_ptr<Tank> shooter_;
-  //Tank* shooter_ = nullptr;
+  Tank* shooter_ = nullptr;
 };
 class Tank :public MovableObject
 {
@@ -149,13 +150,12 @@ public:
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
   bool isEnemy();
-  bool isEnemy(Tank& tank);
+  bool isEnemy(GameObject* gamobject);
   void setEnemy(bool enemy);
   bool isPlayer();
   void setPlayer(bool player);
 protected:
 private:
-  //Bullet * bullet_ = nullptr;
   UINT ShootTime_;
   bool isenemy_ = false;
   bool isplayer_ = false;

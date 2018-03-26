@@ -95,6 +95,11 @@ void GameObject::updateCallback()
   GameObject::updateCallback(*this);
 }
 
+bool GameObject::isSamePosition(const POINT & point)
+{
+  return point.y == position_.y && point.x == position_.x;
+}
+
 void GameObject::setPosition(int x, int y)
 {
   position_.x = x;
@@ -423,9 +428,12 @@ bool Tank::isEnemy()
   return isenemy_;
 }
 
-bool Tank::isEnemy(Tank & tank)
+bool Tank::isEnemy(GameObject* gameobject)
 {
-  return this->isEnemy() != tank.isEnemy();
+  if (dynamic_cast<Tank*>(gameobject))
+    return this->isEnemy() != dynamic_cast<Tank*>(gameobject)->isEnemy();
+  else
+    return false;// !gameobject || !gameobject->isWalkable();
 }
 
 void Tank::setEnemy(bool enemy)
@@ -571,7 +579,7 @@ void Tank::update()
   {
     //if AI - find player, gold and move to it or if see it - shoot
     GameObject* Player = Game::instance().getPlayer();
-    /*
+    
     //see player
     if (Game::instance().isInVisibleDistance(getPosition(), Player->getPosition()))
     {
@@ -596,21 +604,26 @@ void Tank::update()
           this->shoot();
     }
     else
-    */
       if (!isMooving())
       {
         if (Game::instance().canMoveTo(NewPosition))
           moveForward();
         else
-          if (rand() % 100 < 10)
+          if (rand() % 100 < 20)
             setDirection(!Direction.x, !Direction.y);
+          else
+            this->shoot();
       }
+      else
+        if (rand() % 100 < 1)
+          this->shoot();
   }
 }
 
 Bullet::Bullet(Tank* tank, UINT speed)
   :MovableObject(tank->getPosition().x, tank->getPosition().y, tank->getColor(), tank->getBackground(), 1, tank->getAttackDamage(), 0, 0)
 {
+  shooter_ = tank;// std::make_shared<Tank>(*tank);
   setDirection(tank->getDirection());
   UINT TileSize = Game::instance().getTileSize();
   speed_ = speed;
@@ -681,17 +694,33 @@ void Bullet::update()
     POINT NewPosition = getPosition();
     NewPosition.x += (getOffset().x + (Direction.x * TileSize / 2)) / TileSize;
     NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
-    if (Game::instance().canMoveTo(NewPosition))
+    setOffset(getOffset().x + Direction.x * speed_, getOffset().y + Direction.y * speed_);
+    hitTest(NewPosition);
+  }
+}
+
+bool Bullet::hitTest(POINT position)
+{
+  bool isFilledPosition = !Game::instance().canMoveTo(position);
+  if (!isFilledPosition)
+    return false;
+  GameObject* gameobject = Game::instance().getObject(position);
+  isFilledPosition = isFilledPosition && gameobject;
+  bool selfShoot = gameobject == shooter_;
+  bool toEnemy = shooter_->isEnemy(gameobject);
+  bool toStatic = false;
+  if (gameobject)
+    toStatic = (!dynamic_cast<MovableObject*>(gameobject) && !gameobject->isWalkable());
+  if (isFilledPosition && !selfShoot && (toEnemy || toStatic))
+  {
+    stop();
+    if (gameobject)
     {
-      setOffset(getOffset().x + Direction.x * speed_, getOffset().y + Direction.y * speed_);
+      gameobject->takeDamage(getAttackDamage(), getDirection());
+      if (shooter_->isPlayer() && toEnemy)
+        Game::instance().increaseScore();
     }
-    else
-    {
-      stop();
-      GameObject* gameobject = Game::instance().getObject(NewPosition);
-      if (gameobject)
-        gameobject->takeDamage(getAttackDamage(), Direction);
-      GameObject::takeDamage(getHP());
-    }
+    GameObject::takeDamage(getHP());
+    return true;
   }
 }

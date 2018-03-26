@@ -26,8 +26,23 @@ struct CompareGameObjectPoint
   }
 private:
   const POINT& point_;
-};*/
+};
 
+class CompareGameObjectPoint
+{
+private:
+  POINT point_;
+public:
+  CompareGameObjectPoint(const POINT& point)
+    : point_(point)
+  {}
+
+  bool operator()(const GameObject * gameobject)
+  {
+    return gameobject->getPosition().x == point_.x && gameobject->getPosition().y == point_.y;
+  }
+};
+*/
 extern inline int SQR(int x);
 
 namespace gdi {
