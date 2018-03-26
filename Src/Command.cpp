@@ -3,6 +3,10 @@
 #include "Command.h"
 #include "GameObject.h"
 
+Command::~Command()
+{
+}
+
 MoveForwardCommand::MoveForwardCommand(GameObject* gameobject)
 {
   object_ = gameobject;
@@ -52,4 +56,15 @@ void RotateCommand::execute()
     else
       dynamic_cast<MovableObject*>(object_)->moveForward();
   }
+}
+
+StopForwardCommand::StopForwardCommand(GameObject * gameobject)
+{
+  object_ = gameobject;
+}
+
+void StopForwardCommand::execute()
+{
+  if (dynamic_cast<MovableObject*>(object_))
+    dynamic_cast<MovableObject*>(object_)->stop();
 }

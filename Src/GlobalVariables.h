@@ -66,6 +66,7 @@ extern int SEC_IN_MIN;
 extern int SHOOT_DELAY;
 extern int ENEMY_UPDATE_DELAY;
 extern UINT DEFAULT_BULLET_SPEED;
+extern UINT DEFAULT_OBJECT_SPEED;
 extern int VISIBLE_DISTANCE;
 
 extern int KEY_UP;

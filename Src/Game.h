@@ -25,7 +25,10 @@ public:
   void test();
   //
   void stopGame();
+  void pause();
+  void resume();
   bool isRunning();
+  bool isPaused();
   void increaseScore();
   //world/map functions
   GameObject* getPlayer();
@@ -85,12 +88,13 @@ private:
   UINT startTime_ = 0;
 
   bool isRunning_ = true;
+  bool isPaused_ = false;
   UINT score_ = 0;
   std::weak_ptr<GameObject> player_;
   std::weak_ptr<GameObject> gold_;
   std::vector<std::shared_ptr<GameObject>> tiles_;
   std::vector<std::shared_ptr<Bullet>> bullets_;
-  std::vector<std::unique_ptr<Command>> inputs_;
+  std::vector<std::shared_ptr<Command>> inputs_;
 
   void generateNewMap();
 

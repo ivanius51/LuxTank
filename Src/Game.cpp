@@ -146,7 +146,7 @@ void Game::readInput()
   if (getPlayer())
   {
     //one commands
-    if (kbhit())
+    if (_kbhit())
     {
       int symbol = getch();
       //if (symbol == 0 || symbol == 224 || symbol == -32)
@@ -155,26 +155,45 @@ void Game::readInput()
       //  getch();
       //  symbol = getch();
       //}
-      if (symbol == KEY_UP)//  (GetAsyncKeyState(VK_UP) & 0x8000)
+      if ((symbol == KEY_UP) || ((GetAsyncKeyState(VK_UP) & 0x8000) && getPlayer()->getDirection().y == -1))
         command = new RotateCommand(getPlayer(), 0, -1);
-      if (symbol == KEY_DOWN)//(GetAsyncKeyState(VK_DOWN) & 0x8000)
+      if ((symbol == KEY_DOWN) || ((GetAsyncKeyState(VK_DOWN) & 0x8000) && getPlayer()->getDirection().y == 1))
         command = new RotateCommand(getPlayer(), 0, 1);
-      if (symbol == KEY_LEFT)//(GetAsyncKeyState(VK_LEFT) & 0x8000)
+      if ((symbol == KEY_LEFT) || ((GetAsyncKeyState(VK_LEFT) & 0x8000) && getPlayer()->getDirection().x == -1))
         command = new RotateCommand(getPlayer(), -1, 0);
-      if (symbol == KEY_RIGHT)//(GetAsyncKeyState(VK_RIGHT) & 0x8000)
+      if ((symbol == KEY_RIGHT) || ((GetAsyncKeyState(VK_RIGHT) & 0x8000) && getPlayer()->getDirection().x == 1))
         command = new RotateCommand(getPlayer(), 1, 0);
     }
     if (command)
-      inputs_.push_back(std::unique_ptr<Command>(command));
+    {
+      command->execute();
+      delete command;
+      command = nullptr;
+      //inputs_.push_back(std::shared_ptr<Command>(command));
+    }
 
-    //multiple commands
-    if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+    //multiple commands input modifier
+    if (GetAsyncKeyState(VK_SPACE) & 0x8001)
       command = new FireCommand(getPlayer());
-    if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
+    if (GetAsyncKeyState(VK_ESCAPE) & 0x8001)
+    {
       stopGame();
+    }
+    if (GetAsyncKeyState(VK_PAUSE) & 0x8001)
+    {
+      if (isPaused())
+        resume();
+      else
+        pause();
+    }
 
     if (command)
-      inputs_.push_back(std::unique_ptr<Command>(command));
+    {
+      command->execute();
+      delete command;
+      command = nullptr;
+      //inputs_.push_back(std::unique_ptr<Command>(command));
+    }
   }
 }
 
@@ -182,12 +201,13 @@ void Game::useInput()
 {
   for (auto&& input : inputs_)
   {
-    Command* command = input.release();
-    if (command)
-    {
-      command->execute();
-      //delete command;
-    }
+    //Command* command = input.release();
+    //if (command)
+    //{
+    //  command->execute();
+    //  delete command;
+    //  command = nullptr;
+    //}
   }
   inputs_.erase(inputs_.begin(), inputs_.end());
 }
@@ -240,9 +260,24 @@ void Game::stopGame()
   isRunning_ = false;
 }
 
+void Game::pause()
+{
+  isPaused_ = true;
+}
+
+void Game::resume()
+{
+  isPaused_ = false;
+}
+
 bool Game::isRunning()
 {
   return isRunning_;
+}
+
+bool Game::isPaused()
+{
+  return isPaused_;
 }
 
 void Game::increaseScore()

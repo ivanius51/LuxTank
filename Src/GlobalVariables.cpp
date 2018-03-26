@@ -15,6 +15,7 @@ int ENEMY_UPDATE_DELAY = 750;
 int SHOOT_DELAY = 500;
 UINT DEFAULT_BULLET_SPEED = 2;
 int VISIBLE_DISTANCE = 6;
+UINT DEFAULT_OBJECT_SPEED = 1;
 
 int KEY_UP = 72;
 int KEY_DOWN = 80;
@@ -27,6 +28,7 @@ COLORREF ENEMY_COLOR = RGB(128, 0, 0);
 COLORREF COLOR_GREY = RGB(128, 128, 128);
 COLORREF COLOR_YELLOW = RGB(255, 255, 0);
 COLORREF COLOR_BLACK = 0;
+
 const std::string WALL_TEXTURE = "res/wall.bmp";
 const std::string TANK_GREEN_1 = "res/tankgreen.bmp";
 const std::string TANK_BLUE_1 = "res/tankblue.bmp";

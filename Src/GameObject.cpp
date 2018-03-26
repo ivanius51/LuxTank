@@ -565,7 +565,7 @@ void Tank::update()
     }
     else
     {
-      setOffset(getOffset().x + Direction.x, getOffset().y + Direction.y);
+      setOffset(getOffset().x + Direction.x * DEFAULT_OBJECT_SPEED, getOffset().y + Direction.y * DEFAULT_OBJECT_SPEED);
       if (!Game::instance().canMoveTo(NewPosition) && (abs(getOffset().x) >= (TileSize / 5) || abs(getOffset().y) >= (TileSize / 5)))
       {
         stop();
@@ -579,7 +579,7 @@ void Tank::update()
   {
     //if AI - find player, gold and move to it or if see it - shoot
     GameObject* Player = Game::instance().getPlayer();
-    
+
     //see player
     if (Game::instance().isInVisibleDistance(getPosition(), Player->getPosition()))
     {
@@ -599,9 +599,10 @@ void Tank::update()
               setDirection(!Direction.x, !Direction.y);
             else
               this->shoot();
-        }else
-        if (rand() % 100 < 1)
-          this->shoot();
+        }
+        else
+          if (rand() % 100 < 1)
+            this->shoot();
     }
     else
       if (!isMooving())
@@ -713,14 +714,25 @@ bool Bullet::hitTest(POINT position)
     toStatic = (!dynamic_cast<MovableObject*>(gameobject) && !gameobject->isWalkable());
   if (isFilledPosition && !selfShoot && (toEnemy || toStatic))
   {
-    stop();
-    if (gameobject)
+    bool evade = !gameobject || !toStatic;
+    if (gameobject && !toStatic)
+    {
+      POINT Direction = getDirection();
+      POINT targetDirection = dynamic_cast<MovableObject*>(gameobject)->getDirection();
+      POINT targetOffset = dynamic_cast<MovableObject*>(gameobject)->getOffset();
+      //try Evade (outway animation)
+      //if (((targetDirection.x == Direction.x || targetDirection.y == Direction.y) && dynamic_cast<MovableObject*>(gameobject)->isMooving()))
+      //  evade = ((abs(targetOffset.x) + abs(targetOffset.y)) < Game::instance().getTileSize() / 3);
+    }
+    if (!evade)
     {
       gameobject->takeDamage(getAttackDamage(), getDirection());
       if (shooter_->isPlayer() && toEnemy)
         Game::instance().increaseScore();
+      stop();
+      GameObject::takeDamage(getHP());
+      return true;
     }
-    GameObject::takeDamage(getHP());
-    return true;
   }
+  return false;
 }

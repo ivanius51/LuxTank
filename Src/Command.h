@@ -7,6 +7,7 @@
 class Command
 {
 public:
+  virtual ~Command();
   virtual void execute() = 0;
 };
 
@@ -17,6 +18,15 @@ class MoveForwardCommand : public Command
   public:
     MoveForwardCommand(GameObject* gameobject);
     void execute();
+};
+
+class StopForwardCommand : public Command
+{
+private:
+  GameObject * object_;
+public:
+  StopForwardCommand(GameObject* gameobject);
+  void execute();
 };
 
 class TakeDamageCommand : public Command

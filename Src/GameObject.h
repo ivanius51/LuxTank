@@ -120,6 +120,7 @@ protected:
 private:
   bool isMooving_ = false;
   UINT updateDelay_ = ENEMY_UPDATE_DELAY;
+  POINT nextPosition_ = { 0, 0 };
 };
 
 class Tank;

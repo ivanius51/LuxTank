@@ -20,12 +20,13 @@ int main()
     Game::instance().readInput();
     Game::instance().useInput();
 
-    Game::instance().update();
+    if (!Game::instance().isPaused())
+      Game::instance().update();
     Game::instance().draw();
 
     int elapsedTime = GetTickCount() - startTime;
     if (Game::instance().getFrameDelay() > elapsedTime)
-      //Sleep(Game::instance().getFrameDelay() - elapsedTime);
+      //Sleep(Game::instance().getFrameDelay() - elapsedTime);//windows
       std::this_thread::sleep_for(std::chrono::milliseconds(Game::instance().getFrameDelay() - elapsedTime));
   }
   Game::instance().free();
