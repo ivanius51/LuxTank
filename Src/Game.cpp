@@ -3,6 +3,8 @@
 #include "stdafx.h"
 #include <algorithm>
 #include <string>
+#include <iostream>
+#include <conio.h>
 
 #include <math.h>
 
@@ -138,37 +140,61 @@ void Game::free()
     DeleteObject(buffer_);
 }
 
-Command* Game::input()
+void Game::readInput()
 {
   Command* command = nullptr;
   if (getPlayer())
   {
-    if (GetAsyncKeyState(VK_UP) & 0x8000)
+    //one commands
+    if (kbhit())
     {
-      command = new RotateCommand(getPlayer(), 0, -1);
+      int symbol = getch();
+      //if (symbol == 0 || symbol == 224 || symbol == -32)
+      //{
+      //  symbol = 0;
+      //  getch();
+      //  symbol = getch();
+      //}
+      if (symbol == KEY_UP)//  (GetAsyncKeyState(VK_UP) & 0x8000)
+        command = new RotateCommand(getPlayer(), 0, -1);
+      if (symbol == KEY_DOWN)//(GetAsyncKeyState(VK_DOWN) & 0x8000)
+        command = new RotateCommand(getPlayer(), 0, 1);
+      if (symbol == KEY_LEFT)//(GetAsyncKeyState(VK_LEFT) & 0x8000)
+        command = new RotateCommand(getPlayer(), -1, 0);
+      if (symbol == KEY_RIGHT)//(GetAsyncKeyState(VK_RIGHT) & 0x8000)
+        command = new RotateCommand(getPlayer(), 1, 0);
     }
-    if (GetAsyncKeyState(VK_DOWN) & 0x8000)
-    {
-      command = new RotateCommand(getPlayer(), 0, 1);
-    }
-    if (GetAsyncKeyState(VK_LEFT) & 0x8000)
-    {
-      command = new RotateCommand(getPlayer(), -1, 0);
-    }
-    if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
-    {
-      command = new RotateCommand(getPlayer(), 1, 0);
-    }
+    if (command)
+      inputs_.push_back(std::unique_ptr<Command>(command));
+
+    //multiple commands
     if (GetAsyncKeyState(VK_SPACE) & 0x8000)
-    {
       command = new FireCommand(getPlayer());
-    }
     if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
-    {
       stopGame();
+
+    if (command)
+      inputs_.push_back(std::unique_ptr<Command>(command));
+  }
+}
+
+void Game::useInput()
+{
+  for (auto&& input : inputs_)
+  {
+    Command* command = input.release();
+    if (command)
+    {
+      command->execute();
+      //delete command;
     }
   }
-  return command;
+  inputs_.erase(inputs_.begin(), inputs_.end());
+}
+
+void Game::clearInput()
+{
+  inputs_.clear();
 }
 
 void Game::update()

@@ -1,6 +1,6 @@
 #include "stdafx.h"
-//#include <chrono>
-//#include <thread>
+#include <chrono>
+#include <thread>
 #include <iostream>
 
 #include <windows.h>
@@ -16,23 +16,17 @@ int main()
   while (Game::instance().isRunning())
   {
     int startTime = GetTickCount();
-    if (startTime % 5 != 0)
-    {
-      Command* UserInputCommand = Game::instance().input();
-      if (UserInputCommand != nullptr)
-      {
-        UserInputCommand->execute();
-        delete UserInputCommand;
-      }
-    }
+
+    Game::instance().readInput();
+    Game::instance().useInput();
 
     Game::instance().update();
     Game::instance().draw();
 
     int elapsedTime = GetTickCount() - startTime;
     if (Game::instance().getFrameDelay() > elapsedTime)
-      Sleep(Game::instance().getFrameDelay() - elapsedTime);
-    //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      //Sleep(Game::instance().getFrameDelay() - elapsedTime);
+      std::this_thread::sleep_for(std::chrono::milliseconds(Game::instance().getFrameDelay() - elapsedTime));
   }
   Game::instance().free();
   return 0;

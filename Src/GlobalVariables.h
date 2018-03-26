@@ -53,9 +53,11 @@ namespace gdi {
   extern HBITMAP copyBitmap(HBITMAP hBitmap);
 }
 extern double PI;
+
 extern int MAX_FPS;
 extern int MAP_SIZE;
 extern int TILE_SIZE;
+
 extern int WALL_HP;
 extern int GOLD_HP;
 extern int PLAYER_LIVES;
@@ -65,6 +67,12 @@ extern int SHOOT_DELAY;
 extern int ENEMY_UPDATE_DELAY;
 extern UINT DEFAULT_BULLET_SPEED;
 extern int VISIBLE_DISTANCE;
+
+extern int KEY_UP;
+extern int KEY_DOWN;
+extern int KEY_LEFT;
+extern int KEY_RIGHT;
+
 extern COLORREF WALL_COLOR;
 extern COLORREF ALLY_COLOR;
 extern COLORREF ENEMY_COLOR;

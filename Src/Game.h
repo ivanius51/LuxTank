@@ -16,7 +16,10 @@ public:
   void initialization(HWND handle, bool topmost, UINT mapSize = MAP_SIZE, UINT tileSize = TILE_SIZE, UINT fpsmax = MAX_FPS);
   void free();
   //main
-  Command* input();
+  void readInput();
+  void useInput();
+  void clearInput();
+
   void update();
   void draw();
   void test();
@@ -87,6 +90,7 @@ private:
   std::weak_ptr<GameObject> gold_;
   std::vector<std::shared_ptr<GameObject>> tiles_;
   std::vector<std::shared_ptr<Bullet>> bullets_;
+  std::vector<std::unique_ptr<Command>> inputs_;
 
   void generateNewMap();
 
