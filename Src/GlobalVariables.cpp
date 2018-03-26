@@ -7,9 +7,11 @@ int MAX_FPS = 60;
 int MAP_SIZE = 15;
 int TILE_SIZE = 32;
 int PLAYER_LIVES = 3;
+int WALL_HP = 3;
+int GOLD_HP = 1;
 int MSEC_IN_SEC = 1000;
 int SEC_IN_MIN = 60;
-int ENEMY_UPDATE_DELAY = 250;
+int ENEMY_UPDATE_DELAY = 750;
 int SHOOT_DELAY = 500;
 UINT DEFAULT_BULLET_SPEED = 2;
 int VISIBLE_DISTANCE = 6;
@@ -23,6 +25,11 @@ const std::string WALL_TEXTURE = "res/wall.bmp";
 const std::string TANK_GREEN_1 = "res/tankgreen.bmp";
 const std::string TANK_BLUE_1 = "res/tankblue.bmp";
 POINT DEFAULT_DIRECTION = { 0, -1 };
+
+bool CompareGameObjectPoint(GameObject & gameobject, POINT & point)
+{
+  return point.y == gameobject.getPosition().y && point.x == gameobject.getPosition().x;
+}
 
 inline int SQR(int x)
 {

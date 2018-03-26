@@ -326,7 +326,7 @@ void Wall::update()
     Game::instance().deleteObject(this);
     //delete this;
   }
-  updateCallback();
+  //updateCallback();
 }
 
 MovableObject::MovableObject(int x, int y, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
@@ -360,7 +360,10 @@ void MovableObject::setUpdateDelay(UINT updateDelay)
 
 bool MovableObject::canUpdate()
 {
-  return ((GetTickCount() - updateTime_) > updateDelay_);
+  bool result = ((GetTickCount() - updateTime_) > updateDelay_);
+  if (result)
+    updateTime_ = GetTickCount();
+  return result;
 }
 
 void MovableObject::rotate(POINT point)
@@ -420,6 +423,11 @@ bool Tank::isEnemy()
   return isenemy_;
 }
 
+bool Tank::isEnemy(Tank & tank)
+{
+  return this->isEnemy() != tank.isEnemy();
+}
+
 void Tank::setEnemy(bool enemy)
 {
   isenemy_ = enemy;
@@ -428,6 +436,11 @@ void Tank::setEnemy(bool enemy)
 bool Tank::isPlayer()
 {
   return isplayer_;
+}
+
+void Tank::setPlayer(bool player)
+{
+  isplayer_ = player;
 }
 
 void Tank::shoot()
@@ -455,6 +468,8 @@ void Tank::draw()
 
 void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
 {
+  if (isDead())
+    return;
   HGDIOBJ replaced = SelectObject(hdc, hbitmap);
   if (replaced)
   {
@@ -516,12 +531,13 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
     }
     SelectObject(hdc, replaced);
   };
-  //if (bullet_)
-  //  bullet_->draw();
 }
 
 void Tank::update()
 {
+  if (isDead())
+    Game::instance().deleteObject(this);
+
   int TileSize = Game::instance().getTileSize();
   int MapSize = Game::instance().getMapSize();
 
@@ -551,11 +567,11 @@ void Tank::update()
   }
 
   //TODO: Enemy Actions move it to some AI class.method
-  if (isEnemy() && canUpdate())
+  if (!isPlayer() && canUpdate())
   {
-    updateTime_ = GetTickCount();
     //if AI - find player, gold and move to it or if see it - shoot
     GameObject* Player = Game::instance().getPlayer();
+    /*
     //see player
     if (Game::instance().isInVisibleDistance(getPosition(), Player->getPosition()))
     {
@@ -575,9 +591,12 @@ void Tank::update()
               setDirection(!Direction.x, !Direction.y);
             else
               this->shoot();
-        }
+        }else
+        if (rand() % 100 < 1)
+          this->shoot();
     }
     else
+    */
       if (!isMooving())
       {
         if (Game::instance().canMoveTo(NewPosition))
@@ -585,46 +604,19 @@ void Tank::update()
         else
           if (rand() % 100 < 10)
             setDirection(!Direction.x, !Direction.y);
-          else
-            this->shoot();
-      }else
-        if (rand() % 100 < 1)
-          this->shoot();
+      }
   }
-
-  //check self bullets
-  //bullets_.erase(
-  //  std::remove_if(bullets_.begin(), bullets_.end(), 
-  //    [](MovableObject* movableobject){return movableobject->isMooving();}
-  //  ), bullets_.end());
-  //take indexes and remove after
-  //(std::vector<Bullet*>::const_iterator it;
-  //for(auto it = bullets_.begin(); it != bullets_.end(); it++)
-  //{
-  //  if (*it)
-  //    (*it)->update();
-  //}
-
-  //if (bullet_)
-  //{
-  //  bullet_->update();
-  //  if (!bullet_->isMooving())
-  //  {
-  //    delete bullet_;
-  //    bullet_ = nullptr;
-  //  }
-  //}
 }
 
 Bullet::Bullet(Tank* tank, UINT speed)
-  :MovableObject(tank->getPosition().x, tank->getPosition().y, tank->getColor(), tank->getBackground(), 0, tank->getAttackDamage(), 0, 0)
+  :MovableObject(tank->getPosition().x, tank->getPosition().y, tank->getColor(), tank->getBackground(), 1, tank->getAttackDamage(), 0, 0)
 {
   setDirection(tank->getDirection());
   UINT TileSize = Game::instance().getTileSize();
   speed_ = speed;
   setWidth(TileSize / 4);
   setHeight(TileSize / 4);
-  //setOffset(tank->getOffset().x + tank->getDirection().x*(TileSize / 3), tank->getOffset().y + tank->getDirection().y*(TileSize / 3));
+  setOffset(tank->getOffset().x + tank->getDirection().x*(TileSize / 3), tank->getOffset().y + tank->getDirection().y*(TileSize / 3));
   moveForward();
 }
 
@@ -637,6 +629,8 @@ void Bullet::draw()
 }
 void Bullet::drawTo(HDC hdc, HBITMAP hbitmap)
 {
+  if (isDead())
+    return;
   HGDIOBJ replaced = SelectObject(hdc, hbitmap);
   if (replaced)
   {
@@ -689,14 +683,15 @@ void Bullet::update()
     NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
     if (Game::instance().canMoveTo(NewPosition))
     {
-      setOffset(getOffset().x + getDirection().x * speed_, getOffset().y + getDirection().y * speed_);
+      setOffset(getOffset().x + Direction.x * speed_, getOffset().y + Direction.y * speed_);
     }
     else
     {
       stop();
-      GameObject* gameobject = Game::instance().getObject(NewPosition).get();
+      GameObject* gameobject = Game::instance().getObject(NewPosition);
       if (gameobject)
-        gameobject->takeDamage(getAttackDamage(), getDirection());
+        gameobject->takeDamage(getAttackDamage(), Direction);
+      GameObject::takeDamage(getHP());
     }
   }
 }

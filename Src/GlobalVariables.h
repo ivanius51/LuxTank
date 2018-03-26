@@ -3,7 +3,7 @@
 #define GLOBALVARIABLES_H
 #include "GameObject.h"
 
-struct POINTComarator {
+struct PointComarator {
   bool operator() (const POINT& point1, const POINT& point2) const
   {
     if (point1.x != point2.x)
@@ -16,6 +16,18 @@ template <typename T> int sign(T value)
 {
   return (value > 0) ? 1 : ((value < 0) ? -1 : 0);
 };
+/*
+struct CompareGameObjectPoint
+{
+  CompareGameObjectPoint(const POINT& point) : point_(point) {}
+  bool operator()(GameObject& object) const
+  {
+    return object.getPosition().x == point_.x && object.getPosition().y == point_.y;
+  }
+private:
+  const POINT& point_;
+};*/
+
 extern inline int SQR(int x);
 
 namespace gdi {
@@ -29,6 +41,8 @@ extern double PI;
 extern int MAX_FPS;
 extern int MAP_SIZE;
 extern int TILE_SIZE;
+extern int WALL_HP;
+extern int GOLD_HP;
 extern int PLAYER_LIVES;
 extern int MSEC_IN_SEC;
 extern int SEC_IN_MIN;

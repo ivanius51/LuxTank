@@ -144,23 +144,23 @@ Command* Game::input()
   Command* command = nullptr;
   if (GetAsyncKeyState(VK_UP) & 0x8000)
   {
-    command = new RotateCommand(player_, 0, -1);
+    command = new RotateCommand(getPlayer(), 0, -1);
   }
   if (GetAsyncKeyState(VK_DOWN) & 0x8000)
   {
-    command = new RotateCommand(player_, 0, 1);
+    command = new RotateCommand(getPlayer(), 0, 1);
   }
   if (GetAsyncKeyState(VK_LEFT) & 0x8000)
   {
-    command = new RotateCommand(player_, -1, 0);
+    command = new RotateCommand(getPlayer(), -1, 0);
   }
   if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
   {
-    command = new RotateCommand(player_, 1, 0);
+    command = new RotateCommand(getPlayer(), 1, 0);
   }
   if (GetAsyncKeyState(VK_SPACE) & 0x8000)
   {
-    command = new FireCommand(player_);
+    command = new FireCommand(getPlayer());
   }
   if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
   {
@@ -184,7 +184,7 @@ void Game::update()
       [](std::shared_ptr<Bullet> bullet) {return !bullet->isMooving(); }
   ), bullets_.end());
 
-  if (player_ && player_->isDead() || gold_ && gold_->isDead())
+  if (getPlayer() && getPlayer()->isDead() || getGold() && getGold()->isDead())
     stopGame();
 }
 
@@ -198,10 +198,7 @@ void Game::draw()
 
 void Game::test()
 {
-  if (player_)
-  {
-
-  }
+  
 }
 
 void Game::stopGame()
@@ -219,19 +216,20 @@ void Game::increaseScore()
   score_++;
 }
 
-Tank* Game::getPlayer()
+GameObject* Game::getPlayer()
 {
-  return player_;
+  return player_.lock().get();
 }
 GameObject* Game::getGold()
 {
-  return gold_;
+  return gold_.lock().get();
 }
-std::shared_ptr<GameObject> Game::getObject(POINT point)
+GameObject* Game::getObject(POINT point)
 {
-  auto tile = tiles_.find(point);
+  auto tile = tiles_.find(point);//map
+  //auto tile = std::find_if(tiles_.begin(), tiles_.end(), CompareGameObjectPoint(point));
   if (tile != tiles_.end())
-    return tile->second;
+    return tile->second.get();
   else
     return nullptr;
 }
@@ -246,7 +244,7 @@ void Game::deleteObject(const GameObject* gameobject)
       break;
     }
 }
-std::shared_ptr<GameObject> Game::getObject(int x, int y)
+GameObject* Game::getObject(int x, int y)
 {
   POINT point;
   point.x = x;
@@ -255,7 +253,7 @@ std::shared_ptr<GameObject> Game::getObject(int x, int y)
 }
 bool Game::isWalkable(int x, int y)
 {
-  GameObject* gameobject = Game::getObject(x, y).get();
+  GameObject* gameobject = Game::getObject(x, y);
   return ((!gameobject) || gameobject->isWalkable());
 }
 bool Game::isWalkable(POINT point)
@@ -296,7 +294,7 @@ GameObject* Game::collidedWith(GameObject* gameobject)
   POINT Offset = dynamic_cast<VisualObject*>(gameobject)->getOffset();
   Position.x += (Offset.x + (Direction.x * tileSize_ / 2)) / 2;
   Position.y += (Offset.y + (Direction.y * tileSize_ / 2)) / 2;
-  GameObject* interact = getObject(Position).get();
+  GameObject* interact = getObject(Position);
   if (!interact || !dynamic_cast<VisualObject*>(interact))
     return nullptr;
 
@@ -391,22 +389,23 @@ void Game::generateNewMap()
       if (rand() % 100 < 20)
       {
         point = { i, j };
-        gameobject.reset(new Wall(point, 5, 0, WALL_TEXTURE));
+        gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE));
         //gameobject.get()->bindUpdateCallback([](GameObject& gameobject) {if (gameobject.isDead()) Game::instance().stopGame(); });
         tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
       }
   //Default player position
   point.x = mapSize_ / 2 + 2;
   point.y = mapSize_ - 1;
-  player_ = new Tank(point, TANK_GREEN_1, ALLY_COLOR, PLAYER_LIVES);
-  gameobject.reset(player_);
+  gameobject.reset(new Tank(point, TANK_GREEN_1, ALLY_COLOR, PLAYER_LIVES));
+  player_ = gameobject;
+  dynamic_cast<Tank*>(player_.lock().get())->setPlayer(true);
   tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
 
   for (int i = 0; i <= int(mapSize_ / 2 + 1); i++)
     for (int j = 0; j < mapSize_; j++)
     {
       point = { j, i };
-      if ((i % 2 == 0) && (j % 2 == 0) && (rand() % 100 < 20) && (tiles_.end() == tiles_.find(point)))
+      if ((i % 2 == 0) && (j % 2 == 0) && (rand() % 100 < 10) && (tiles_.end() == tiles_.find(point)))
       {
         gameobject.reset(new Tank(point, TANK_BLUE_1, ENEMY_COLOR, 1));
         dynamic_cast<Tank*>(gameobject.get())->setEnemy(true);
@@ -417,19 +416,19 @@ void Game::generateNewMap()
   for (int i = int(mapSize_ / 2 - 1); i <= int(mapSize_ / 2 + 1); i++)
   {
     point = { i, int(mapSize_ - 2) };
-    gameobject.reset(new Wall(point, 5, 0, WALL_TEXTURE));
+    gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE));
     tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
     point = { i, int(mapSize_ - 1) };
     if (i == (mapSize_ / 2))
     {
-      gold_ = new Wall(point, 1, 0, COLOR_YELLOW / 2, COLOR_YELLOW);
-      gameobject.reset(gold_);
+      gameobject.reset(new Wall(point, GOLD_HP, 0, COLOR_YELLOW / 2, COLOR_YELLOW));
+      gold_ = gameobject;
       gameobject.get()->bindUpdateCallback([](GameObject& gameobject) {if (gameobject.isDead()) Game::instance().stopGame(); });
       tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
     }
     else
     {
-      gameobject.reset(new Wall(point, 5, 0, WALL_TEXTURE));
+      gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE));
       tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
     }
   }
@@ -495,7 +494,7 @@ void Game::drawGui()
   UINT Min = ((Time / MSEC_IN_SEC / SEC_IN_MIN) % SEC_IN_MIN);
   std::string strOut = "Time " + std::to_string(Min) + ":" + std::to_string(Sec);
   TextOut(textLayerDc_, borderSize_, borderSize_, strOut.c_str(), strOut.length());
-  strOut = "Score:" + std::to_string(score_) + " Lives: " + std::to_string(player_->getHP());
+  strOut = "Score:" + std::to_string(score_) + " Lives: " + std::to_string(getPlayer()->getHP());
   SIZE textsize;
   GetTextExtentPoint32(textLayerDc_, strOut.c_str(), strOut.length(), &textsize);
   TextOut(textLayerDc_, windowSize_ + borderSize_ * 2 - textsize.cx - borderSize_, borderSize_, strOut.c_str(), strOut.length());

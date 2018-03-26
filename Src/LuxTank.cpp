@@ -20,7 +20,10 @@ int main()
     {
       Command* UserInputCommand = Game::instance().input();
       if (UserInputCommand != nullptr)
+      {
         UserInputCommand->execute();
+        delete UserInputCommand;
+      }
     }
 
     Game::instance().update();

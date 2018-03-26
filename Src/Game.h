@@ -26,10 +26,10 @@ public:
   bool isRunning();
   void increaseScore();
   //world
-  Tank* getPlayer();
+  GameObject* getPlayer();
   GameObject* getGold();
-  std::shared_ptr<GameObject> getObject(int x, int y);
-  std::shared_ptr<GameObject> getObject(POINT point);
+  GameObject* getObject(int x, int y);
+  GameObject* getObject(POINT point);
   void deleteObject(const GameObject* gameobject);
   bool isWalkable(int x, int y);
   bool isWalkable(POINT point);
@@ -84,9 +84,10 @@ private:
 
   bool isRunning_ = true;
   UINT score_ = 0;
-  Tank* player_ = nullptr;
-  GameObject* gold_ = nullptr;
-  std::map<POINT, std::shared_ptr<GameObject>, POINTComarator> tiles_;
+  std::weak_ptr<GameObject> player_;
+  std::weak_ptr<GameObject> gold_;
+  std::map<POINT, std::shared_ptr<GameObject>, PointComarator> tiles_;
+  //std::vector<std::shared_ptr<GameObject>> tiles_;
   std::vector<std::shared_ptr<Bullet>> bullets_;
 
   void generateNewMap();

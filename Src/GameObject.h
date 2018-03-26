@@ -33,6 +33,7 @@ public:
   void bindUpdateCallback(std::function<void(GameObject&)> function);
   void updateCallback(GameObject& gameobject);
   void updateCallback();
+
 protected:
   void setPosition(int x, int y);
   void setPosition(POINT point);
@@ -90,10 +91,10 @@ private:
 class Wall :public VisualObject
 {
 public:
-  Wall(int x, int y, UINT hp = 5, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
-  Wall(POINT point, UINT hp = 5, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
-  Wall(int x, int y, UINT hp = 5, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, UINT width = 0, UINT height = 0);
-  Wall(POINT point, UINT hp = 5, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, UINT width = 0, UINT height = 0);
+  Wall(int x, int y, UINT hp = WALL_HP, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
+  Wall(POINT point, UINT hp = WALL_HP, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
+  Wall(int x, int y, UINT hp = WALL_HP, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, UINT width = 0, UINT height = 0);
+  Wall(POINT point, UINT hp = WALL_HP, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, UINT width = 0, UINT height = 0);
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
@@ -134,7 +135,7 @@ protected:
 private:
   UINT speed_;
   //std::weak_ptr<Tank> shooter_;
-  //Tank * shooter_ = nullptr;
+  //Tank* shooter_ = nullptr;
 };
 class Tank :public MovableObject
 {
@@ -148,8 +149,10 @@ public:
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
   bool isEnemy();
+  bool isEnemy(Tank& tank);
   void setEnemy(bool enemy);
   bool isPlayer();
+  void setPlayer(bool player);
 protected:
 private:
   //Bullet * bullet_ = nullptr;
