@@ -109,7 +109,7 @@ void Game::initialization(HWND handle, bool topmost, UINT mapSize, UINT tileSize
 
     MoveWindow(handle, (Screen.right / 2) - (Window.right - Window.left) / 2, (Screen.bottom / 2) - (Window.bottom - Window.top) / 2, Window.right - Window.left, textHeightPx_ + windowSize_ + borderSize_ * 2, 1);
     SetWindowLong(handle, GWL_STYLE, WS_POPUP);
-    SetWindowRgn(handle, CreateRectRgn(Client.left + borderSize_ / 2, Client.top + borderSize_ / 2, windowSize_ + borderSize_ * 2 + borderSize_ / 2, textHeightPx_ + windowSize_ + borderSize_ * 2), TRUE);
+    SetWindowRgn(handle, CreateRectRgn(Client.left + borderSize_ / 2 + 1, Client.top + borderSize_ / 2, windowSize_ + borderSize_ * 2 + borderSize_ / 2 - 1, textHeightPx_ + windowSize_ + borderSize_ * 2 + 1), TRUE);
     //fullscreen TOPMOST
     if (topmost)
       SetWindowPos(handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
@@ -234,9 +234,9 @@ GameObject* Game::getGold()
 }
 GameObject* Game::getObject(POINT point)
 {
-  auto tile = std::find_if(tiles_.begin(), tiles_.end(), 
-      [&point](std::shared_ptr<GameObject> object) 
-      {return object->getPosition().x == point.x && object->getPosition().y == point.y; }//CompareGameObjectPoint(point)
+  auto tile = std::find_if(tiles_.begin(), tiles_.end(),
+    [&point](std::shared_ptr<GameObject> object)
+  {return object->getPosition().x == point.x && object->getPosition().y == point.y; }//CompareGameObjectPoint(point)
   );
   if (tile != tiles_.end())
     return tile->get();
@@ -247,7 +247,7 @@ bool Game::deleteObject(GameObject* gameobject)
 {
   auto tile = std::find_if(tiles_.begin(), tiles_.end(),
     [&gameobject](std::shared_ptr<GameObject> object)
-    {return object.get() == gameobject; }
+  {return object.get() == gameobject; }
   );
   if (tile != tiles_.end())
   {
@@ -512,7 +512,7 @@ void Game::drawGui()
   UINT Min = ((Time / MSEC_IN_SEC / SEC_IN_MIN) % SEC_IN_MIN);
   std::string strOut = "Time " + std::to_string(Min) + ":" + std::to_string(Sec);
   TextOut(textLayerDc_, borderSize_, borderSize_, strOut.c_str(), strOut.length());
-  strOut = "Score:" + std::to_string(score_) + " Lives: " + std::to_string(getPlayer()? getPlayer()->getHP(): 0);
+  strOut = "Score:" + std::to_string(score_) + " Lives: " + std::to_string(getPlayer() ? getPlayer()->getHP() : 0);
   SIZE textsize;
   GetTextExtentPoint32(textLayerDc_, strOut.c_str(), strOut.length(), &textsize);
   TextOut(textLayerDc_, windowSize_ + borderSize_ * 2 - textsize.cx - borderSize_, borderSize_, strOut.c_str(), strOut.length());
