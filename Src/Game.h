@@ -8,6 +8,8 @@
 #include "GameObject.h"
 #include "Command.h"
 
+#include "World.h"
+
 class Game
 {
 public:
@@ -69,7 +71,7 @@ private:
   Game& operator=(Game &&) = delete;
   Game();
   ~Game();
-
+  //graphic
   HDC hdc_ = nullptr;
   HWND handle_ = nullptr;
   HDC textLayerDc_ = nullptr;
@@ -78,22 +80,23 @@ private:
   HBITMAP staticLayer_ = nullptr;
   HDC bufferDc_ = nullptr;
   HBITMAP buffer_ = nullptr;
-
   UINT frameDelay_ = 0;
-  UINT tileSize_ = 0;
-  UINT mapSize_ = 0;
   UINT windowSize_ = 0;
   UINT borderSize_ = 0;
   UINT textHeightPx_ = 0;
+  //game
   UINT startTime_ = 0;
-
   bool isRunning_ = true;
   bool isPaused_ = false;
   UINT score_ = 0;
+  //map
+  UINT tileSize_ = 0;
+  UINT mapSize_ = 0;
   std::weak_ptr<GameObject> player_;
   std::weak_ptr<GameObject> gold_;
   std::vector<std::shared_ptr<GameObject>> tiles_;
   std::vector<std::shared_ptr<Bullet>> bullets_;
+  //input
   std::vector<std::shared_ptr<Command>> inputs_;
 
   void generateNewMap();

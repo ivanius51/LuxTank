@@ -723,6 +723,7 @@ bool Bullet::hitTest(POINT position)
       //try Evade (outway animation)
       //if (((targetDirection.x == Direction.x || targetDirection.y == Direction.y) && dynamic_cast<MovableObject*>(gameobject)->isMooving()))
       //  evade = ((abs(targetOffset.x) + abs(targetOffset.y)) < Game::instance().getTileSize() / 3);
+      evade = !toEnemy;
     }
     if (!evade)
     {
