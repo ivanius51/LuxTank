@@ -4,6 +4,8 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
+
 #define NOMINMAX
 #include <Windows.h>
 
@@ -28,6 +30,9 @@ public:
   virtual void draw() = 0;
   virtual void drawTo(HDC hdc, HBITMAP hbitmap) = 0;
   virtual void update() = 0;
+  void bindUpdateCallback(std::function<void(GameObject&)> function);
+  void updateCallback(GameObject& gameobject);
+  void updateCallback();
 protected:
   void setPosition(int x, int y);
   void setPosition(POINT point);
@@ -49,6 +54,7 @@ private:
   POINT direction_ = { 0, -1 };
   POINT oldDirection_ = { 0, -1 };
   UINT32 updateTime_;
+  std::vector<std::function<void(GameObject&)>> updateCallbacks_;
   UINT32 drawTime_;
 };
 class VisualObject :public GameObject
@@ -94,17 +100,6 @@ public:
 protected:
 private:
 };
-class Gold :public Wall
-{
-public:
-  Gold(UINT x, UINT y);
-  Gold(POINT point);
-  void draw();
-  void drawTo(HDC hdc, HBITMAP hbitmap);
-  void update();
-protected:
-private:
-};
 class MovableObject :public VisualObject
 {
 public:
@@ -123,7 +118,7 @@ protected:
   UINT updateTime_ = 0;
 private:
   bool isMooving_ = false;
-  UINT updateDelay_ = 0;
+  UINT updateDelay_ = ENEMY_UPDATE_DELAY;
 };
 
 class Tank;
@@ -131,12 +126,13 @@ class Tank;
 class Bullet :public MovableObject
 {
 public:
-  Bullet(Tank* tank);
+  Bullet(Tank* tank, UINT speed = DEFAULT_BULLET_SPEED);
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
 protected:
 private:
+  UINT speed_;
   //std::weak_ptr<Tank> shooter_;
   //Tank * shooter_ = nullptr;
 };
@@ -152,6 +148,7 @@ public:
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
   bool isEnemy();
+  void setEnemy(bool enemy);
   bool isPlayer();
 protected:
 private:

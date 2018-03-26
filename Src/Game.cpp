@@ -181,12 +181,10 @@ void Game::update()
   //remove collided(stopped) bullets
   bullets_.erase(
     std::remove_if(bullets_.begin(), bullets_.end(),
-      //[](MovableObject* movableobject){return !movableobject->isMooving();}
-      //[](std::shared_ptr<Bullet> bullet) {return bullet->isDead(); }
       [](std::shared_ptr<Bullet> bullet) {return !bullet->isMooving(); }
   ), bullets_.end());
 
-  if (player_->isDead())
+  if (player_ && player_->isDead() || gold_ && gold_->isDead())
     stopGame();
 }
 
@@ -225,7 +223,7 @@ Tank* Game::getPlayer()
 {
   return player_;
 }
-Gold* Game::getGold()
+GameObject* Game::getGold()
 {
   return gold_;
 }
@@ -386,30 +384,54 @@ Game::~Game()
 void Game::generateNewMap()
 {
   POINT point;
-
+  std::shared_ptr<GameObject> gameobject;
+  //random walls
   for (int i = 0; i < mapSize_; i++)
     for (int j = 0; j < mapSize_ - 2; j++)
       if (rand() % 100 < 20)
       {
         point = { i, j };
-        GameObject* gameobject = new Wall(point, 5, 0, WALL_TEXTURE);
-        tiles_.insert(std::pair<POINT, GameObject*>({ point }, gameobject));
+        gameobject.reset(new Wall(point, 5, 0, WALL_TEXTURE));
+        //gameobject.get()->bindUpdateCallback([](GameObject& gameobject) {if (gameobject.isDead()) Game::instance().stopGame(); });
+        tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
       }
-
+  //Default player position
   point.x = mapSize_ / 2 + 2;
   point.y = mapSize_ - 1;
-  player_ = new Tank(point, TANK_GREEN_UP1_TEXTURE, ALLY_COLOR, PLAYER_LIVES);
-  tiles_.insert(std::pair<POINT, GameObject*>({ point }, player_));
+  player_ = new Tank(point, TANK_GREEN_1, ALLY_COLOR, PLAYER_LIVES);
+  gameobject.reset(player_);
+  tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+
+  for (int i = 0; i <= int(mapSize_ / 2 + 1); i++)
+    for (int j = 0; j < mapSize_; j++)
+    {
+      point = { j, i };
+      if ((i % 2 == 0) && (j % 2 == 0) && (rand() % 100 < 20) && (tiles_.end() == tiles_.find(point)))
+      {
+        gameobject.reset(new Tank(point, TANK_BLUE_1, ENEMY_COLOR, 1));
+        dynamic_cast<Tank*>(gameobject.get())->setEnemy(true);
+        tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+      }
+    }      
 
   for (int i = int(mapSize_ / 2 - 1); i <= int(mapSize_ / 2 + 1); i++)
   {
     point = { i, int(mapSize_ - 2) };
-    tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point, 5, 0, WALL_TEXTURE)));
+    gameobject.reset(new Wall(point, 5, 0, WALL_TEXTURE));
+    tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
     point = { i, int(mapSize_ - 1) };
     if (i == (mapSize_ / 2))
-      tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Gold(point)));
+    {
+      gold_ = new Wall(point, 1, 0, COLOR_YELLOW / 2, COLOR_YELLOW);
+      gameobject.reset(gold_);
+      gameobject.get()->bindUpdateCallback([](GameObject& gameobject) {if (gameobject.isDead()) Game::instance().stopGame(); });
+      tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+    }
     else
-      tiles_.insert(std::pair<POINT, GameObject*>({ point }, new Wall(point, 5, 0, WALL_TEXTURE)));
+    {
+      gameobject.reset(new Wall(point, 5, 0, WALL_TEXTURE));
+      tiles_.insert(std::pair<POINT, std::shared_ptr<GameObject>>(point, gameobject));
+    }
   }
 }
 
@@ -436,13 +458,19 @@ void Game::renderObjects()
   //clear buufer
   BitBlt(bufferDc_, 0, 0, windowSize_, windowSize_, bufferDc_, 0, 0, BLACKNESS);
   //std::map<POINT, GameObject*>::const_iterator
-  for (auto i = tiles_.begin(); i != tiles_.end(); i++)
-  {
-    i->second->draw();
-  }
   for (auto&& bullet : bullets_)
     bullet->draw();
-
+  for (auto i = tiles_.begin(); i != tiles_.end(); i++)
+  {
+    if (!i->second.get()->canMove())
+      i->second->draw();
+  }
+  for (auto i = tiles_.begin(); i != tiles_.end(); i++)
+  {
+    if (i->second.get()->canMove())
+      i->second->draw();
+  }
+ 
   //draw buffer to frame
   BitBlt(staticLayerDc_, borderSize_, borderSize_, windowSize_, windowSize_, bufferDc_, 0, 0, SRCPAINT);
 

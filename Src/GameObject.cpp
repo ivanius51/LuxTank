@@ -79,6 +79,22 @@ void GameObject::takeDamage(int damage)
   hp_ -= damage;
 }
 
+void GameObject::bindUpdateCallback(std::function<void(GameObject&)> function)
+{
+  updateCallbacks_.push_back(std::bind(function, std::placeholders::_1));
+}
+
+void GameObject::updateCallback(GameObject& gameobject)
+{
+  for (const auto& callback : updateCallbacks_)
+    callback(gameobject);
+}
+
+void GameObject::updateCallback()
+{
+  GameObject::updateCallback(*this);
+}
+
 void GameObject::setPosition(int x, int y)
 {
   position_.x = x;
@@ -223,6 +239,7 @@ Wall::Wall(int x, int y, UINT hp, int attackDamage, COLORREF color, COLORREF bac
   :VisualObject(x, y, hp, attackDamage, color, background, "", width, height)
 {
   setIsWalkable(false);
+  setCanMove(false);
 }
 
 Wall::Wall(POINT point, UINT hp, int attackDamage, COLORREF color, COLORREF background, UINT width, UINT height)
@@ -234,6 +251,7 @@ Wall::Wall(int x, int y, UINT hp, int attackDamage, const std::string & texture,
   : VisualObject(x, y, hp, attackDamage, COLOR_GREY, COLOR_GREY, texture, width, height)
 {
   setIsWalkable(false);
+  setCanMove(false);
 }
 
 Wall::Wall(POINT point, UINT hp, int attackDamage, const std::string & texture, UINT width, UINT height)
@@ -308,44 +326,23 @@ void Wall::update()
     Game::instance().deleteObject(this);
     //delete this;
   }
-}
-
-Gold::Gold(UINT x, UINT y) :
-  Wall(x, y, 1, 0, RGB(128, 128, 0), RGB(255, 255, 0))
-{
-}
-
-Gold::Gold(POINT point)
-  : Gold(point.x, point.y)
-{
-}
-
-void Gold::draw()
-{
-  Wall::draw();
-}
-
-void Gold::drawTo(HDC hdc, HBITMAP hbitmap)
-{
-  Wall::drawTo(hdc, hbitmap);
-}
-
-void Gold::update()
-{
-  if (isDead())
-    Game::instance().stopGame();
+  updateCallback();
 }
 
 MovableObject::MovableObject(int x, int y, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
   :VisualObject(x, y, hp, attackDamage, color, background, width, height)
 {
   isMooving_ = false;
+  setIsWalkable(false);
+  setCanMove(true);
 }
 
 MovableObject::MovableObject(int x, int y, UINT hp, int attackDamage, const std::string & texture, COLORREF color, COLORREF background, UINT width, UINT height)
   : VisualObject(x, y, hp, attackDamage, color, background, texture, width, height)
 {
   isMooving_ = false;
+  setIsWalkable(false);
+  setCanMove(true);
 }
 
 UINT MovableObject::getUpdateTime()
@@ -363,7 +360,7 @@ void MovableObject::setUpdateDelay(UINT updateDelay)
 
 bool MovableObject::canUpdate()
 {
-  return ((GetTickCount() - updateTime_) - updateDelay_);
+  return ((GetTickCount() - updateTime_) > updateDelay_);
 }
 
 void MovableObject::rotate(POINT point)
@@ -397,6 +394,8 @@ bool MovableObject::isMooving()
 Tank::Tank(int x, int y, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
   :MovableObject(x, y, color, background, hp, attackDamage, width, height)
 {
+  setIsWalkable(false);
+  setCanMove(true);
 }
 
 Tank::Tank(POINT point, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
@@ -407,6 +406,8 @@ Tank::Tank(POINT point, COLORREF color, COLORREF background, UINT hp, int attack
 Tank::Tank(int x, int y, const std::string & texture, COLORREF color, UINT hp, int attackDamage, UINT width, UINT height)
   : MovableObject(x, y, hp, attackDamage, texture, color, color, width, height)
 {
+  setIsWalkable(false);
+  setCanMove(true);
 }
 
 Tank::Tank(POINT point, const std::string & texture, COLORREF color, UINT hp, int attackDamage, UINT width, UINT height)
@@ -417,6 +418,11 @@ Tank::Tank(POINT point, const std::string & texture, COLORREF color, UINT hp, in
 bool Tank::isEnemy()
 {
   return isenemy_;
+}
+
+void Tank::setEnemy(bool enemy)
+{
+  isenemy_ = enemy;
 }
 
 bool Tank::isPlayer()
@@ -467,10 +473,10 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
       else
         if (getDirection().y == 1)
           degres = 180;
-      else
-      if (getDirection().x == 1)
-        degres = 90;
-      gdi::rotateTexture(texture, degres, true);
+        else
+          if (getDirection().x == 1)
+            degres = 90;
+      gdi::rotateTexture(texture, degres);
       gdi::drawBitmap(hdc, Position.x, Position.y, TileSize, TileSize, texture, true);
       DeleteObject(texture);
     }
@@ -565,11 +571,25 @@ void Tank::update()
           if (Game::instance().canMoveTo(NewPosition))
             moveForward();
           else
-          {
-            setDirection(!Direction.x, !Direction.y);
-          }
+            if (rand() % 100 < 20)
+              setDirection(!Direction.x, !Direction.y);
+            else
+              this->shoot();
         }
     }
+    else
+      if (!isMooving())
+      {
+        if (Game::instance().canMoveTo(NewPosition))
+          moveForward();
+        else
+          if (rand() % 100 < 10)
+            setDirection(!Direction.x, !Direction.y);
+          else
+            this->shoot();
+      }else
+        if (rand() % 100 < 1)
+          this->shoot();
   }
 
   //check self bullets
@@ -596,14 +616,15 @@ void Tank::update()
   //}
 }
 
-Bullet::Bullet(Tank* tank)
+Bullet::Bullet(Tank* tank, UINT speed)
   :MovableObject(tank->getPosition().x, tank->getPosition().y, tank->getColor(), tank->getBackground(), 0, tank->getAttackDamage(), 0, 0)
 {
   setDirection(tank->getDirection());
   UINT TileSize = Game::instance().getTileSize();
+  speed_ = speed;
   setWidth(TileSize / 4);
   setHeight(TileSize / 4);
-  setOffset(tank->getOffset().x + tank->getDirection().x*(TileSize / 3), tank->getOffset().y + tank->getDirection().y*(TileSize / 3));
+  //setOffset(tank->getOffset().x + tank->getDirection().x*(TileSize / 3), tank->getOffset().y + tank->getDirection().y*(TileSize / 3));
   moveForward();
 }
 
@@ -668,7 +689,7 @@ void Bullet::update()
     NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
     if (Game::instance().canMoveTo(NewPosition))
     {
-      setOffset(getOffset().x + getDirection().x, getOffset().y + getDirection().y);
+      setOffset(getOffset().x + getDirection().x * speed_, getOffset().y + getDirection().y * speed_);
     }
     else
     {

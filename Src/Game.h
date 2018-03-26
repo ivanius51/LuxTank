@@ -27,7 +27,7 @@ public:
   void increaseScore();
   //world
   Tank* getPlayer();
-  Gold* getGold();
+  GameObject* getGold();
   std::shared_ptr<GameObject> getObject(int x, int y);
   std::shared_ptr<GameObject> getObject(POINT point);
   void deleteObject(const GameObject* gameobject);
@@ -85,7 +85,7 @@ private:
   bool isRunning_ = true;
   UINT score_ = 0;
   Tank* player_ = nullptr;
-  Gold* gold_ = nullptr;
+  GameObject* gold_ = nullptr;
   std::map<POINT, std::shared_ptr<GameObject>, POINTComarator> tiles_;
   std::vector<std::shared_ptr<Bullet>> bullets_;
 

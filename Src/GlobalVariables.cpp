@@ -9,15 +9,19 @@ int TILE_SIZE = 32;
 int PLAYER_LIVES = 3;
 int MSEC_IN_SEC = 1000;
 int SEC_IN_MIN = 60;
-int SHOOT_DELAY = 250;
+int ENEMY_UPDATE_DELAY = 250;
+int SHOOT_DELAY = 500;
+UINT DEFAULT_BULLET_SPEED = 2;
 int VISIBLE_DISTANCE = 6;
 COLORREF WALL_COLOR = RGB(156, 74, 0);
 COLORREF ALLY_COLOR = RGB(0, 128, 0);
 COLORREF ENEMY_COLOR = RGB(128, 0, 0);
 COLORREF COLOR_GREY = RGB(128, 128, 128);
+COLORREF COLOR_YELLOW = RGB(255, 255, 0);
 COLORREF COLOR_BLACK = 0;
 const std::string WALL_TEXTURE = "res/wall.bmp";
-const std::string TANK_GREEN_UP1_TEXTURE = "res/TankGreen1UP.bmp";
+const std::string TANK_GREEN_1 = "res/tankgreen.bmp";
+const std::string TANK_BLUE_1 = "res/tankblue.bmp";
 POINT DEFAULT_DIRECTION = { 0, -1 };
 
 inline int SQR(int x)
