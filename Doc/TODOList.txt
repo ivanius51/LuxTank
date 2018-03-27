@@ -3,9 +3,9 @@
 Place AI controll in one function.
 +FIx player turning.
 +Fix execute commands of player.
-Fix collisions of bullet.
++Fix collisions of bullet.
 Finish UML Class diagram, seq diagram.
-fix all memory leaks with use smart pointers for objects. 
++fix all memory leaks with use smart pointers for objects. 
 +use smart pointers for objects. 
 +add destructors where use objects and free memory.
 Move tiles,size ets Game::methods to new World class.

@@ -51,7 +51,7 @@ bool World::deleteObject(GameObject* gameobject)
   {return object.get() == gameobject; }
   );
   if (tile != tiles_.end())
-  { 
+  {
     tiles_.erase(tile);
     return true;
   }
@@ -99,7 +99,7 @@ bool World::canMoveTo(int x, int y)
 
 bool World::isInVisibleDistance(POINT first, POINT second)
 {
-  return (sqrt(SQR(second.x - first.x) + SQR(second.y - first.y)) < VISIBLE_DISTANCE);
+  return (pointDistance(first, second) < VISIBLE_DISTANCE);
 }
 
 bool World::isIntersection(POINT first, POINT second)
@@ -148,6 +148,29 @@ UINT World::getMapSize()
   return mapSize_;
 }
 
+bool World::canCreateTank(POINT position, int closeDistance)
+{
+  bool result = !getObject(position);
+  if (result)
+  {
+    int xmin = std::max(0, int(position.x - closeDistance));
+    int xmax = std::min(int(mapSize_ - 1), int(position.x + closeDistance));
+    int ymin = std::max(0, int(position.y - closeDistance));
+    int ymax = std::min(int(mapSize_ - 1), int(position.y + closeDistance));
+    for (int x = xmin; x <= xmax; x++)
+      for (int y = ymin; y <= ymax; y++)
+      {
+        POINT point = { x, y };
+        GameObject* gameobject = getObject(point);
+        if (gameobject && dynamic_cast<Tank*>(gameobject))
+          result = false;
+        if (!result)
+          break;
+      }
+  }
+  return result;
+}
+
 void World::generateNewMap()
 {
   POINT point;
@@ -158,7 +181,7 @@ void World::generateNewMap()
       if (rand() % 100 < 20)
       {
         point = { i, j };
-        gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE));
+        gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE, WALL_COLOR));
         //gameobject.get()->bindUpdateCallback([](GameObject& gameobject) {if (gameobject.isDead()) World::instance().stopGame(); });
         tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
       }
@@ -171,13 +194,15 @@ void World::generateNewMap()
   tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
 
   for (int i = 0; i <= int(mapSize_ * 0.75); i++)
-    for (int j = 0; j < mapSize_; j++)
+    for (int j = 1; j < mapSize_; j++)
     {
       point = { j, i };
-      if ((i % 3 == 0) && (j % 3 == 0) && (rand() % 100 < 25) && (!getObject(point)))
+      if ((rand() % 100 < (25-i)) && 
+        (canCreateTank(point)))
       {
         gameobject.reset(new Tank(point, TANK_BLUE_1, ENEMY_COLOR, 1));
         dynamic_cast<Tank*>(gameobject.get())->setEnemy(true);
+        dynamic_cast<Tank*>(gameobject.get())->rotate({ 0, 1 });
         tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
       }
     }

@@ -17,6 +17,8 @@ UINT DEFAULT_BULLET_SPEED = 2;
 int VISIBLE_DISTANCE = 6;
 UINT DEFAULT_OBJECT_SPEED = 1;
 
+bool DEBUG_DRAW_COLLISIONS = true;
+
 int KEY_UP = 72;
 int KEY_DOWN = 80;
 int KEY_LEFT = 75;
@@ -43,7 +45,33 @@ inline int SQR(int x)
 {
   return x * x;
 }
+double pointDistance(POINT first, POINT second)
+{
+  return sqrt(SQR(second.x - first.x) + SQR(second.y - first.y));
+}
+bool circleIntersection(POINT first, POINT second, UINT radius1, UINT radius2)
+{
+  int distance = int(pointDistance(first, second));
+  return distance <= (radius1 + radius2);//std::abs(int(radius1 - radius2)) <= 
+}
 namespace gdi {
+  HBRUSH createBrush(UINT style, COLORREF color, ULONG_PTR hatch)
+  {
+    //Brush paint style
+    LOGBRUSH logbrush;
+    //BS_SOLID, BS_NULL, BS_HOLLOW, BS_HATCHED, BS_PATTERN, BS_PATTERN8X8, BS_DIBPATTERN, BS_DIBPATTERN8X8, BS_DIBPATTERNPT 
+    logbrush.lbStyle = style;
+    logbrush.lbColor = color;
+    //HS_HORIZONTAL, HS_VERTICAL, HS_FDIAGONAL, HS_BDIAGONAL, HS_CROSS, HS_DIAGCROSS
+    logbrush.lbHatch = hatch;
+    return CreateBrushIndirect(&logbrush);
+  }
+
+  HPEN createPen(UINT style, COLORREF color, UINT width)
+  {
+    //psSolid, psDash, psDot, psDashDot, psDashDotDot, psClear, psInsideFrame, psUserStyle, psAlternate 
+    return CreatePen(style, width, color);
+  }
   void drawBitmap(HDC hdc, int x, int y, HBITMAP hBitmap, bool transparent)
   {
     if (hBitmap)

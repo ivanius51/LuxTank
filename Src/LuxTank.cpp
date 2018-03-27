@@ -17,7 +17,7 @@ void gameLoop()
     Game::instance().readInput();
     Game::instance().useInput();
 
-    if (!Game::instance().isPaused())
+    if (! Game::instance().isPaused())
       Game::instance().update();
     Game::instance().draw();
 
@@ -33,6 +33,8 @@ void gameLoop()
 
 int main()
 {
+  //randomization
+  srand(GetTickCount());
   //can edit settings and load it from file
   Game::instance().initialization(GetConsoleWindow(), false, MAP_SIZE, TILE_SIZE, MAX_FPS);
 

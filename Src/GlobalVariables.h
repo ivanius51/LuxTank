@@ -44,8 +44,13 @@ public:
 };
 */
 extern inline int SQR(int x);
+extern double pointDistance(POINT first, POINT second);
+extern bool circleIntersection(POINT first, POINT second, UINT radius1, UINT radius2);
 
-namespace gdi {
+namespace gdi 
+{
+  extern HBRUSH createBrush(UINT style, COLORREF color, ULONG_PTR hatch);
+  extern HPEN createPen(UINT style, COLORREF color, UINT width);
   extern void drawBitmap(HDC hdc, const int x, const int y, HBITMAP hBitmap, const bool transparent = false);
   extern void drawBitmap(HDC hdc, const int x, const int y, const int width, const int height, HBITMAP hBitmap, const bool transparent = false);
   extern void rotateTexture(HBITMAP hBitmap, const int degres, bool AdjustSize = false);
@@ -68,6 +73,8 @@ extern int ENEMY_UPDATE_DELAY;
 extern UINT DEFAULT_BULLET_SPEED;
 extern UINT DEFAULT_OBJECT_SPEED;
 extern int VISIBLE_DISTANCE;
+
+extern bool DEBUG_DRAW_COLLISIONS;
 
 extern int KEY_UP;
 extern int KEY_DOWN;

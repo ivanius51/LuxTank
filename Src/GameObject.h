@@ -46,7 +46,7 @@ protected:
   POINT getOldDirection();
   void setOldDirection();
 private:
-  UINT hp_ = 0;
+  int hp_ = 0;
   UINT maxHp_ = 0;
   int attackDamage_ = 0;
   bool canMove_ = false;
@@ -64,17 +64,22 @@ public:
   VisualObject(int x, int y, UINT hp, int attackDamage, COLORREF color = 0, COLORREF background = 0, UINT width = 0, UINT height = 0);
   VisualObject(int x, int y, UINT hp, int attackDamage, COLORREF color = 0, COLORREF background = 0, const std::string& texture = "", UINT width = 0, UINT height = 0);
   ~VisualObject();
+  virtual void draw();
   COLORREF getColor();
   COLORREF getBackground();
   UINT getWidth();
   UINT getHeight();
   POINT getScreenPosition();
+  POINT getScreenPositionCenter();
   POINT getOffset();
   HBITMAP getTexture();
   void takeDamage(int damage, POINT damageDirection);
 protected:
-  HDC targetdc_ = nullptr;
-  HBITMAP targeBitmap_ = nullptr;
+  virtual bool beginDraw(HDC hdc, HBITMAP hbitmap, bool trasparent = true);
+  virtual void endDraw();
+  void drawGizmo();
+  void changeBrush(UINT style = BS_SOLID,COLORREF color = 0, ULONG_PTR hatch = 0);
+  void changePen(UINT style = PS_SOLID, COLORREF color = 0, UINT width = 1);
   RECT Destrucions = { 0, 0, 0, 0 };
   void setOffset(int x, int y);
   void setOffset(POINT point);
@@ -86,15 +91,23 @@ private:
   HBITMAP texture_ = nullptr;
   UINT width_ = 0;
   UINT height_ = 0;
-  POINT offset_ = { 0,0 };
+  POINT offset_ = { 0, 0 };
+  HPEN pen_ = nullptr;
+  HBRUSH brush_ = nullptr;
+  HBRUSH gizmoBrush_ = nullptr;
+  //temporary
+  HGDIOBJ tempPen_ = nullptr;
+  HGDIOBJ tempBrush_ = nullptr;
+  HDC targetdc_ = nullptr;
+  HBITMAP targeBitmap_ = nullptr;
 };
 class Wall :public VisualObject
 {
 public:
   Wall(int x, int y, UINT hp = WALL_HP, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
   Wall(POINT point, UINT hp = WALL_HP, int attackDamage = 0, COLORREF color = COLOR_GREY, COLORREF background = WALL_COLOR, UINT width = 0, UINT height = 0);
-  Wall(int x, int y, UINT hp = WALL_HP, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, UINT width = 0, UINT height = 0);
-  Wall(POINT point, UINT hp = WALL_HP, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, UINT width = 0, UINT height = 0);
+  Wall(int x, int y, UINT hp = WALL_HP, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, COLORREF color = COLOR_BLACK, UINT width = 0, UINT height = 0);
+  Wall(POINT point, UINT hp = WALL_HP, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, COLORREF color = COLOR_BLACK, UINT width = 0, UINT height = 0);
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();

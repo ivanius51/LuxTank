@@ -12,7 +12,8 @@ class World
 public:
   World(UINT mapSize = MAP_SIZE, UINT tileSize = TILE_SIZE);
   virtual ~World();
-
+  //canCreateobject can remake to object type as param
+  bool canCreateTank(POINT position, int closeDistance = 2);
   void generateNewMap();
 
   GameObject* getPlayer();
