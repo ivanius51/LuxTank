@@ -32,26 +32,10 @@ public:
   bool isRunning();
   bool isPaused();
   void increaseScore();
-  //world/map functions
-  GameObject* getPlayer();
-  GameObject* getGold();
-  GameObject* getObject(int x, int y);
-  GameObject* getObject(POINT point);
-  bool deleteObject(GameObject* gameobject);
-  bool isWalkable(int x, int y);
-  bool isWalkable(POINT point);
-  bool isValidPosition(POINT point);
-  bool isValidPosition(int x, int y);
-  bool canMoveTo(POINT point);
-  bool canMoveTo(int x, int y);
-  bool isInVisibleDistance(POINT first, POINT second);
-  bool isIntersection(POINT first, POINT second);
-  //bool checkCollision(int x, int y);
-  //bool checkCollision(POINT point);
-  GameObject* collidedWith(GameObject* gameobject);
-  UINT getTileSize();
-  UINT getMapSize();
+  //
+  World getWorld();
   void addBullet(std::shared_ptr<Bullet> bullet);
+  void addBullet(Bullet* bullet);
   //
   UINT getFrameDelay();
   UINT getWindowSize();
@@ -62,6 +46,7 @@ public:
   HDC getStaticLayerDc();
   HBITMAP getStaticLayer();
   void drawBitmap(int x, int y, HBITMAP hBitmap, bool transparent = false);
+
 protected:
 private:
   //Singlton
@@ -71,6 +56,8 @@ private:
   Game& operator=(Game &&) = delete;
   Game();
   ~Game();
+  //
+  World world_;
   //graphic
   HDC hdc_ = nullptr;
   HWND handle_ = nullptr;
@@ -89,17 +76,10 @@ private:
   bool isRunning_ = true;
   bool isPaused_ = false;
   UINT score_ = 0;
-  //map
-  UINT tileSize_ = 0;
-  UINT mapSize_ = 0;
-  std::weak_ptr<GameObject> player_;
-  std::weak_ptr<GameObject> gold_;
-  std::vector<std::shared_ptr<GameObject>> tiles_;
-  std::vector<std::shared_ptr<Bullet>> bullets_;
   //input
   std::vector<std::shared_ptr<Command>> inputs_;
-
-  void generateNewMap();
+  //bullets
+  std::vector<std::shared_ptr<Bullet>> bullets_;
 
   void drawBorder();
   void renderObjects();
