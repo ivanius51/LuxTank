@@ -107,6 +107,14 @@ bool World::isIntersection(POINT first, POINT second)
   return ((first.x == second.x) || (first.y == second.y));
 }
 
+bool World::isNoEnemy()
+{
+  for (auto object = tiles_.begin(); object != tiles_.end(); object++)
+    if (dynamic_cast<Tank*>(object->get()) && dynamic_cast<Tank*>(object->get())->isEnemy())
+      return false;
+  return true;
+}
+
 GameObject* World::collidedWith(GameObject* gameobject)
 {
   if (!dynamic_cast<VisualObject*>(gameobject))
@@ -197,7 +205,7 @@ void World::generateNewMap()
     for (int j = 1; j < mapSize_; j++)
     {
       point = { j, i };
-      if ((rand() % 100 < (25-i)) && 
+      if ((rand() % 100 < (25 - i)) &&
         (canCreateTank(point)))
       {
         gameobject.reset(new Tank(point, TANK_BLUE_1, ENEMY_COLOR, 1));

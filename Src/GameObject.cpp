@@ -797,8 +797,6 @@ bool Bullet::hitTest(POINT position)
       int myRadius = std::max(getHeight(), getWidth())/2;
       int targetRadius = std::max(dynamic_cast<MovableObject*>(gameobject)->getWidth(), dynamic_cast<MovableObject*>(gameobject)->getHeight())/2;
       evade = !circleIntersection(getScreenPositionCenter(), targetCenter, myRadius, targetRadius);//!toEnemy;
-      if (evade)
-        Game::instance().pause();
     }
     if (!evade)
     {

@@ -18,6 +18,7 @@ public:
 
   GameObject* getPlayer();
   GameObject* getGold();
+  bool isNoEnemy();
   std::vector<std::shared_ptr<GameObject>>* getTiles();
   GameObject* getObject(int x, int y);
   GameObject* getObject(POINT point);

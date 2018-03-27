@@ -26,12 +26,14 @@ public:
   void draw();
   void test();
   //
+  void startGame();
   void stopGame();
   void pause();
   void resume();
   bool isRunning();
   bool isPaused();
   void increaseScore();
+  void showResult();
   //
   World getWorld();
   void addBullet(std::shared_ptr<Bullet> bullet);
@@ -77,12 +79,14 @@ private:
   //game
   UINT startTime_ = 0;
   bool isRunning_ = true;
-  bool isPaused_ = false;
+  bool isPaused_ = true;
   UINT score_ = 0;
   //input
   std::vector<std::unique_ptr<Command>> inputs_;
   //bullets
   std::vector<std::shared_ptr<Bullet>> bullets_;
+
+  std::string gameResult_ = "Paused";
 
   void drawBorder();
   void renderObjects();

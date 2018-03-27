@@ -13,3 +13,4 @@ Move tiles,size ets Game::methods to new World class.
 write AIWork function for controll (update) AI objects.
 In far write Unit Tests for check objects creation, collisions, ets (write all things).
 +Delete Gold class and make it from wall;
++EndGame text GameOver (Victory)

@@ -193,6 +193,7 @@ void Game::readInput()
       resume();
     else
       pause();
+    Sleep(250);
   }
 }
 
@@ -237,8 +238,23 @@ void Game::update()
       [](std::shared_ptr<Bullet> bullet) {return !bullet->isMooving(); }
   ), bullets.end());
 
-  if (world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead())
-    stopGame();
+  if (world_.isNoEnemy() || world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead())
+  {
+    pause();
+    if (world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead())
+    {
+      //GameOver
+      gameResult_ = "GameOver";
+    }
+    else
+      if (world_.isNoEnemy())
+      {
+        //Victory
+        gameResult_ = "Victory";
+      }
+    showResult();
+    pause();
+  }
 
   //remove Died(destroyed) objects
   tiles->erase(
@@ -266,6 +282,45 @@ void Game::draw()
 void Game::test()
 {
 
+}
+
+void Game::startGame()
+{
+  //need draw this to other bitmap, but not have time right now
+  Game::instance().draw();
+  UINT tilesize = world_.getTileSize();
+  HFONT hfont = NULL;
+  HGDIOBJ oldfont = SelectObject(staticLayerDc_, hfont);
+  HGDIOBJ replacedStatic;
+  SIZE textsize;
+  SetTextColor(staticLayerDc_, RGB(255, 255, 255));
+  SetBkMode(staticLayerDc_, TRANSPARENT);
+  std::string strOut;
+  for (int i = 159; i > 0; i--)
+  {
+    UINT startTime = GetTickCount();
+    drawBorder();
+    renderObjects();
+    replacedStatic = SelectObject(staticLayerDc_, staticLayer_);
+    hfont = CreateFont(-tilesize * ((i % 40) / 2), 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, "SYSTEM_FIXED_FONT");
+    SelectObject(staticLayerDc_, hfont);
+    if (i > 40)
+      strOut = std::to_string(i / 40);
+    else
+      strOut = "GO";
+    GetTextExtentPoint32(staticLayerDc_, strOut.c_str(), strOut.length(), &textsize);
+    TextOut(staticLayerDc_, windowSize_ / 2 - textsize.cx / 2, windowSize_ / 2 - textsize.cy / 2, strOut.c_str(), strOut.length());
+    SelectObject(staticLayerDc_, replacedStatic);
+    drawObjects();
+    int elapsed = (GetTickCount() - startTime);
+    if (elapsed < 25)
+      Sleep(25 - elapsed);
+    DeleteObject(replacedStatic);
+    DeleteObject(hfont);
+  }
+  SelectObject(staticLayerDc_, oldfont);
+  DeleteObject(hfont);
+  resume();
 }
 
 void Game::stopGame()
@@ -296,6 +351,27 @@ bool Game::isPaused()
 void Game::increaseScore()
 {
   score_++;
+}
+
+void Game::showResult()
+{
+  UINT tilesize = world_.getTileSize();
+  SIZE textsize;
+  SetTextColor(staticLayerDc_, RGB(255, 255, 255));
+  SetBkMode(staticLayerDc_, TRANSPARENT);
+  drawBorder();
+  renderObjects();
+  HGDIOBJ replacedStatic = SelectObject(staticLayerDc_, staticLayer_);
+  HFONT hfont = CreateFont(-tilesize * 3, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, "SYSTEM_FIXED_FONT");
+  HGDIOBJ oldfont = SelectObject(staticLayerDc_, hfont);
+  SelectObject(staticLayerDc_, hfont);
+  GetTextExtentPoint32(staticLayerDc_, gameResult_.c_str(), gameResult_.length(), &textsize);
+  TextOut(staticLayerDc_, windowSize_ / 2 - textsize.cx / 2, windowSize_ / 2 - textsize.cy / 2, gameResult_.c_str(), gameResult_.length());
+  SelectObject(staticLayerDc_, replacedStatic);
+  drawObjects();
+  DeleteObject(replacedStatic);
+  DeleteObject(hfont);
+  SelectObject(staticLayerDc_, oldfont);
 }
 
 World Game::getWorld()
@@ -402,7 +478,7 @@ void Game::renderObjects()
 
 void Game::drawObjects()
 {
-  //draw frame
+  //draw objects frame
   gdi::drawBitmap(hdc_, 0, textHeightPx_, staticLayer_, false);
 }
 

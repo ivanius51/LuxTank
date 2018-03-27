@@ -12,16 +12,20 @@ void gameLoop()
 {
   while (Game::instance().isRunning())
   {
-    int startTime = GetTickCount();
+    UINT startTime = GetTickCount();
 
     Game::instance().readInput();
     Game::instance().useInput();
 
-    if (! Game::instance().isPaused())
+    if (!Game::instance().isPaused())
+    {
       Game::instance().update();
-    Game::instance().draw();
+      Game::instance().draw();
+    }
+    else
+      Game::instance().showResult();
 
-    int elapsedTime = GetTickCount() - startTime;
+    UINT elapsedTime = GetTickCount() - startTime;
     if (elapsedTime <= 0)
       elapsedTime = 1;
     double fps = 1000 / elapsedTime;
@@ -37,7 +41,8 @@ int main()
   srand(GetTickCount());
   //can edit settings and load it from file
   Game::instance().initialization(GetConsoleWindow(), false, MAP_SIZE, TILE_SIZE, MAX_FPS);
-
+  
+  Game::instance().startGame();
   gameLoop();
   
   Game::instance().free();
