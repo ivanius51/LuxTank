@@ -2,7 +2,8 @@
 +Make AI for enemy tanks.
 Place AI controll in one function.
 +FIx player turning.
-Fix execute commands of player.
++Fix execute commands of player.
+Fix collisions of bullet.
 Finish UML Class diagram, seq diagram.
 fix all memory leaks with use smart pointers for objects. 
 +use smart pointers for objects. 

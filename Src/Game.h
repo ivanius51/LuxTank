@@ -47,6 +47,9 @@ public:
   HBITMAP getStaticLayer();
   void drawBitmap(int x, int y, HBITMAP hBitmap, bool transparent = false);
 
+  UINT avgFrameTime = 0;
+  UINT frameTime = 0;
+  UINT frameCounter = 0;
 protected:
 private:
   //Singlton
@@ -77,7 +80,7 @@ private:
   bool isPaused_ = false;
   UINT score_ = 0;
   //input
-  std::vector<std::shared_ptr<Command>> inputs_;
+  std::vector<std::unique_ptr<Command>> inputs_;
   //bullets
   std::vector<std::shared_ptr<Bullet>> bullets_;
 

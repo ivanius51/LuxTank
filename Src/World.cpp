@@ -170,11 +170,11 @@ void World::generateNewMap()
   dynamic_cast<Tank*>(player_.lock().get())->setPlayer(true);
   tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
 
-  for (int i = 0; i <= int(mapSize_ / 2 + 1); i++)
+  for (int i = 0; i <= int(mapSize_ * 0.75); i++)
     for (int j = 0; j < mapSize_; j++)
     {
       point = { j, i };
-      if ((i % 2 == 0) && (j % 2 == 0) && (rand() % 100 < 20) && (!getObject(point)))
+      if ((i % 3 == 0) && (j % 3 == 0) && (rand() % 100 < 25) && (!getObject(point)))
       {
         gameobject.reset(new Tank(point, TANK_BLUE_1, ENEMY_COLOR, 1));
         dynamic_cast<Tank*>(gameobject.get())->setEnemy(true);

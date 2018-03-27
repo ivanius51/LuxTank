@@ -165,54 +165,48 @@ void Game::readInput()
     }
     if (command)
     {
-      command->execute();
-      delete command;
+      //command->execute();
+      //delete command;
+      //command = nullptr;
+      inputs_.push_back(std::unique_ptr<Command>(command));
       command = nullptr;
-      //inputs_.push_back(std::shared_ptr<Command>(command));
     }
 
     //multiple commands input modifier
     if (GetAsyncKeyState(VK_SPACE) & 0x8001)
       command = new FireCommand(world_.getPlayer());
-    if (GetAsyncKeyState(VK_ESCAPE) & 0x8001)
-    {
-      stopGame();
-    }
-    if (GetAsyncKeyState(VK_PAUSE) & 0x8001)
-    {
-      if (isPaused())
-        resume();
-      else
-        pause();
-    }
-
     if (command)
     {
-      command->execute();
-      delete command;
+      //command->execute();
+      //delete command;
+      //command = nullptr;
+      inputs_.push_back(std::unique_ptr<Command>(command));
       command = nullptr;
-      //inputs_.push_back(std::unique_ptr<Command>(command));
     }
+  }
+  //system commands execute directly
+  if (GetAsyncKeyState(VK_ESCAPE) & 0x8001)
+    stopGame();
+  if (GetAsyncKeyState(VK_PAUSE) & 0x8001)
+  {
+    if (isPaused())
+      resume();
+    else
+      pause();
   }
 }
 
 void Game::useInput()
 {
-  for (auto&& input : inputs_)
-  {
-    //Command* command = input.release();
-    //if (command)
-    //{
-    //  command->execute();
-    //  delete command;
-    //  command = nullptr;
-    //}
-  }
-  inputs_.erase(inputs_.begin(), inputs_.end());
+  for (const auto& input : inputs_)
+    input->execute();
+  clearInput();
 }
 
 void Game::clearInput()
 {
+  for (auto&& input : inputs_)
+    input.reset();
   inputs_.clear();
 }
 
@@ -255,10 +249,18 @@ void Game::update()
 
 void Game::draw()
 {
+  UINT startDrawTime = GetTickCount();
   drawBorder();
   renderObjects();
   drawObjects();
   drawGui();
+
+  frameCounter++;
+  frameTime = GetTickCount() - startDrawTime;
+  if (avgFrameTime == 0)
+    avgFrameTime = frameTime;
+  else
+    avgFrameTime = (frameTime + avgFrameTime) / 2;
 }
 
 void Game::test()

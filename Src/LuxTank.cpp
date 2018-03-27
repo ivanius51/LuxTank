@@ -8,11 +8,8 @@
 #include "Game.h"
 #include "GlobalVariables.h"
 
-int main()
+void gameLoop()
 {
-  //can edit settings and load it from file
-  Game::instance().initialization(GetConsoleWindow(), false, MAP_SIZE, TILE_SIZE, MAX_FPS);
-
   while (Game::instance().isRunning())
   {
     int startTime = GetTickCount();
@@ -25,10 +22,22 @@ int main()
     Game::instance().draw();
 
     int elapsedTime = GetTickCount() - startTime;
+    if (elapsedTime <= 0)
+      elapsedTime = 1;
+    double fps = 1000 / elapsedTime;
     if (Game::instance().getFrameDelay() > elapsedTime)
       //Sleep(Game::instance().getFrameDelay() - elapsedTime);//windows
       std::this_thread::sleep_for(std::chrono::milliseconds(Game::instance().getFrameDelay() - elapsedTime));
   }
+}
+
+int main()
+{
+  //can edit settings and load it from file
+  Game::instance().initialization(GetConsoleWindow(), false, MAP_SIZE, TILE_SIZE, MAX_FPS);
+
+  gameLoop();
+  
   Game::instance().free();
   return 0;
 }
