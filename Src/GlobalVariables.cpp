@@ -3,19 +3,27 @@
 #include "GameObject.h"
 
 double PI = 3.141592;
+
 int MAX_FPS = 60;
+
 int MAP_SIZE = 15;
 int TILE_SIZE = 32;
+int MAX_ENEMY_COUNT = 10;
+
 int PLAYER_LIVES = 3;
 int WALL_HP = 4;
 int GOLD_HP = 1;
+
 int MSEC_IN_SEC = 1000;
 int SEC_IN_MIN = 60;
+
 int ENEMY_UPDATE_DELAY = 750;
-int SHOOT_DELAY = 500;
+int ENEMY_SHOOT_DELAY = 750;
+int PLAYER_SHOOT_DELAY = 500;
+
 UINT DEFAULT_BULLET_SPEED = 2;
-int VISIBLE_DISTANCE = 6;
 UINT DEFAULT_OBJECT_SPEED = 1;
+int VISIBLE_DISTANCE = 6;
 
 bool DEBUG_DRAW_COLLISIONS = false;
 

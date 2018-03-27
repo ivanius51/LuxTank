@@ -547,11 +547,16 @@ void Tank::setPlayer(bool player)
   isplayer_ = player;
 }
 
+void Tank::setShootDelay(UINT shootDelay)
+{
+  shootDelay_ = shootDelay;
+}
+
 void Tank::shoot()
 {
-  if ((GetTickCount() - ShootTime_) > SHOOT_DELAY)
+  if ((GetTickCount() - shootTime_) > shootDelay_)
   {
-    ShootTime_ = GetTickCount();
+    shootTime_ = GetTickCount();
     Game::instance().addBullet(new Bullet(this));
   }
 }
@@ -671,34 +676,36 @@ void Tank::update()
         this->shoot();
       }
       else
-        if (!isMooving())
-        {
-          if (Game::instance().getWorld().canMoveTo(NewPosition))
-            moveForward();
-          else
-            if (rand() % 100 < 30)
-              setDirection(!Direction.x, !Direction.y);
-            else
-              this->shoot();
-        }
-        else
-          if (rand() % 100 < 20)
-            this->shoot();
-    }
-    else
-      if (!isMooving())
       {
+        NewPosition = getPosition();
+        if (rand() % 100 < 50)
+          NewPosition.x += sign(Player->getPosition().x - NewPosition.x);
+        else
+          NewPosition.y += sign(Player->getPosition().y - NewPosition.y);
+        rotateTo(NewPosition);
         if (Game::instance().getWorld().canMoveTo(NewPosition))
           moveForward();
         else
-          if (rand() % 100 < 30)
-            setDirection(!Direction.x, !Direction.y);
-          else
-            this->shoot();
+          this->shoot();
+      }
+    }
+    if (!isMooving())
+    {
+      if (Game::instance().getWorld().canMoveTo(NewPosition))
+      {
+        moveForward();
+        if (rand() % 100 < 30)
+          this->shoot();
       }
       else
-        if (rand() % 100 < 20)
+        if (rand() % 100 < 50)
+          setDirection(!Direction.x, !Direction.y);
+        else
           this->shoot();
+    }
+    else
+      if (rand() % 100 < 30)
+        this->shoot();
   }
 }
 
@@ -794,8 +801,8 @@ bool Bullet::hitTest(POINT position)
       //if (((targetDirection.x == Direction.x || targetDirection.y == Direction.y) && dynamic_cast<MovableObject*>(gameobject)->isMooving()))
       //  evade = ((abs(targetOffset.x) + abs(targetOffset.y)) < Game::instance().getTileSize() / 3);
       POINT targetCenter = dynamic_cast<MovableObject*>(gameobject)->getScreenPositionCenter();
-      int myRadius = std::max(getHeight(), getWidth())/2;
-      int targetRadius = std::max(dynamic_cast<MovableObject*>(gameobject)->getWidth(), dynamic_cast<MovableObject*>(gameobject)->getHeight())/2;
+      int myRadius = std::max(getHeight(), getWidth()) / 2;
+      int targetRadius = std::max(dynamic_cast<MovableObject*>(gameobject)->getWidth(), dynamic_cast<MovableObject*>(gameobject)->getHeight()) / 2;
       evade = !circleIntersection(getScreenPositionCenter(), targetCenter, myRadius, targetRadius);//!toEnemy;
     }
     if (!evade)

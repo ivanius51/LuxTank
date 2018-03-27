@@ -168,9 +168,11 @@ public:
   void setEnemy(bool enemy);
   bool isPlayer();
   void setPlayer(bool player);
+  void setShootDelay(UINT shootDelay);
 protected:
 private:
-  UINT ShootTime_;
+  UINT shootTime_;
+  UINT shootDelay_ = ENEMY_SHOOT_DELAY;
   bool isenemy_ = false;
   bool isplayer_ = false;
 };

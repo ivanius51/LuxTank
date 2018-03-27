@@ -15,10 +15,12 @@ public:
   //canCreateobject can remake to object type as param
   bool canCreateTank(POINT position, int closeDistance = 2);
   void generateNewMap();
+  void spawnEnemys();
 
   GameObject* getPlayer();
   GameObject* getGold();
   bool isNoEnemy();
+  int enemyCount();
   std::vector<std::shared_ptr<GameObject>>* getTiles();
   GameObject* getObject(int x, int y);
   GameObject* getObject(POINT point);

@@ -62,16 +62,22 @@ extern double PI;
 extern int MAX_FPS;
 extern int MAP_SIZE;
 extern int TILE_SIZE;
+extern int MAX_ENEMY_COUNT;
 
 extern int WALL_HP;
 extern int GOLD_HP;
 extern int PLAYER_LIVES;
+
 extern int MSEC_IN_SEC;
 extern int SEC_IN_MIN;
-extern int SHOOT_DELAY;
+
+extern int ENEMY_SHOOT_DELAY;
+extern int PLAYER_SHOOT_DELAY;
 extern int ENEMY_UPDATE_DELAY;
+
 extern UINT DEFAULT_BULLET_SPEED;
 extern UINT DEFAULT_OBJECT_SPEED;
+
 extern int VISIBLE_DISTANCE;
 
 extern bool DEBUG_DRAW_COLLISIONS;

@@ -115,6 +115,15 @@ bool World::isNoEnemy()
   return true;
 }
 
+int World::enemyCount()
+{
+  int result = 0;
+  for (auto object = tiles_.begin(); object != tiles_.end(); object++)
+    if (dynamic_cast<Tank*>(object->get()) && dynamic_cast<Tank*>(object->get())->isEnemy())
+      result++;
+  return result;
+}
+
 GameObject* World::collidedWith(GameObject* gameobject)
 {
   if (!dynamic_cast<VisualObject*>(gameobject))
@@ -199,21 +208,10 @@ void World::generateNewMap()
   gameobject.reset(new Tank(point, TANK_GREEN_1, ALLY_COLOR, PLAYER_LIVES));
   player_ = gameobject;
   dynamic_cast<Tank*>(player_.lock().get())->setPlayer(true);
+  dynamic_cast<Tank*>(player_.lock().get())->setShootDelay(PLAYER_SHOOT_DELAY);
   tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
 
-  for (int i = 0; i <= int(mapSize_ * 0.75); i++)
-    for (int j = 1; j < mapSize_; j++)
-    {
-      point = { j, i };
-      if ((rand() % 100 < (25 - i)) &&
-        (canCreateTank(point)))
-      {
-        gameobject.reset(new Tank(point, TANK_BLUE_1, ENEMY_COLOR, 1));
-        dynamic_cast<Tank*>(gameobject.get())->setEnemy(true);
-        dynamic_cast<Tank*>(gameobject.get())->rotate({ 0, 1 });
-        tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
-      }
-    }
+  spawnEnemys();
 
   for (int i = int(mapSize_ / 2 - 1); i <= int(mapSize_ / 2 + 1); i++)
   {
@@ -234,4 +232,32 @@ void World::generateNewMap()
       tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
     }
   }
+}
+
+void World::spawnEnemys()
+{
+  POINT point;
+  std::shared_ptr<GameObject> gameobject;
+  int enemies = enemyCount();
+  for (int i = 0; i <= int(mapSize_ * 0.7); i++)
+    for (int j = 1; j < mapSize_; j++)
+    {
+      point = { j, i };
+      if ((rand() % 100 < 50) && (enemies < MAX_ENEMY_COUNT) &&
+        (canCreateTank(point)))
+      {
+        gameobject.reset(new Tank(point, TANK_BLUE_1, ENEMY_COLOR, 1));
+        dynamic_cast<Tank*>(gameobject.get())->setEnemy(true);
+        if (rand() % 100 < 50)
+          dynamic_cast<Tank*>(gameobject.get())->rotate({ 0, 1 });
+        else
+          if (rand() % 100 < 50)
+            dynamic_cast<Tank*>(gameobject.get())->rotate({ 1, 0 });
+          else
+            if (rand() % 100 < 50)
+              dynamic_cast<Tank*>(gameobject.get())->rotate({ -1, 0 });
+        tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
+        enemies++;
+      }
+    }
 }
