@@ -77,7 +77,7 @@ void Game::initialization(HWND handle, bool topmost, UINT mapSize, UINT tileSize
     textLayerDc_ = CreateCompatibleDC(hdc_);
     if (!textLayerDc_)
       throw std::runtime_error("can't Create DC textLayer");
-    textLayer_ = CreateCompatibleBitmap(hdc_, windowSize_ + borderSize_ * 2, textHeightPx_);
+    textLayer_ = CreateCompatibleBitmap(hdc_, windowSize_ + borderSize_ * 2, textHeightPx_ + windowSize_ + borderSize_ * 2);
     if (!textLayer_)
       throw std::runtime_error("can't Create Bitmap textLayer");
     HFONT hFont = CreateFont(20, 6, 0, 0, FW_DONTCARE, 0, 0, 0, ANSI_CHARSET,
@@ -265,20 +265,25 @@ void Game::update(double elapsed)
   world_.objectsClear();
 }
 
-void Game::draw()
+void Game::renderFrame()
 {
-  UINT startDrawTime = getTimeMks();// GetTickCount();
+  INT64 startDrawTime = getTimeMks();// GetTickCount();
   drawBorder();
   renderObjects();
   drawObjects();
   drawGui();
-
+  
   frameCounter++;
   frameTime = getTimeMks(startDrawTime);//GetTickCount() - startDrawTime;
   if (avgFrameTime == 0)
     avgFrameTime = frameTime;
   else
     avgFrameTime = (frameTime + avgFrameTime) / 2;
+}
+
+void Game::draw()
+{
+  drawBitmap(0, 0, textLayer_, false);
 }
 
 void Game::test()
@@ -289,7 +294,8 @@ void Game::test()
 void Game::startGame()
 {
   //need draw this to other bitmap, but not have time right now
-  Game::instance().draw();
+  renderFrame();
+  draw();
   UINT tilesize = world_.getTileSize();
   HFONT hfont = NULL;
   HGDIOBJ oldfont = SelectObject(staticLayerDc_, hfont);
@@ -314,6 +320,7 @@ void Game::startGame()
     TextOut(staticLayerDc_, windowSize_ / 2 - textsize.cx / 2, windowSize_ / 2 - textsize.cy / 2, strOut.c_str(), strOut.length());
     SelectObject(staticLayerDc_, replacedStatic);
     drawObjects();
+    draw();
     int elapsed = (GetTickCount() - startTime);
     if (elapsed < 25)
       Sleep(25 - elapsed);
@@ -487,7 +494,9 @@ void Game::renderObjects()
 void Game::drawObjects()
 {
   //draw objects frame
-  gdi::drawBitmap(hdc_, 0, textHeightPx_, staticLayer_, false);
+  HGDIOBJ replaced = SelectObject(textLayerDc_, textLayer_);
+  gdi::drawBitmap(textLayerDc_, 0, textHeightPx_, staticLayer_, false);
+  SelectObject(textLayerDc_, replaced);
 }
 
 void Game::drawGui()
@@ -509,5 +518,4 @@ void Game::drawGui()
   //BitBlt(hdc_, 0, 0, windowSize_ + borderSize_ * 2, textHeightPx_, textLayerDc_, 0, 0, SRCCOPY);
   //deselect a textLayer_ bitmap for use int other DC
   SelectObject(textLayerDc_, replaced);
-  drawBitmap(0, 0, textLayer_, false);
 }

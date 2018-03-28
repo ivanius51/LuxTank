@@ -22,6 +22,7 @@ void gameLoop()
     if (!Game::instance().isPaused())
     {
       Game::instance().update((elapsedTime / (double)MSEC_IN_SEC));
+      Game::instance().renderFrame();
       Game::instance().draw();
     };
     if (Game::instance().isGameOver())

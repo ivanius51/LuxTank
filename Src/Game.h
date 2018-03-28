@@ -23,7 +23,9 @@ public:
   void clearInput();
 
   void update(double elapsed = 1.0);
+  void renderFrame();
   void draw();
+  
   void test();
   //
   void startGame();
