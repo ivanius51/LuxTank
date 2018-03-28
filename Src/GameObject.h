@@ -145,6 +145,7 @@ public:
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
+  void update(UINT elapsed);
   bool hitTest(POINT position);
 protected:
 private:

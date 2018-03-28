@@ -22,7 +22,7 @@ public:
   void useInput();
   void clearInput();
 
-  void update();
+  void update(UINT elapsed = 1);
   void draw();
   void test();
   //

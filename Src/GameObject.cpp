@@ -779,6 +779,24 @@ void Bullet::update()
   }
 }
 
+void Bullet::update(UINT elapsed)
+{
+  int TileSize = Game::instance().getWorld().getTileSize();
+  int MapSize = Game::instance().getWorld().getMapSize();
+  if (isMooving())
+  {
+    POINT Direction = getDirection();
+    POINT NewPosition = getPosition();
+    NewPosition.x += (getOffset().x + (Direction.x * TileSize / 2)) / TileSize;
+    NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
+    int frameSpeed = int(elapsed * DEFAULT_BULLET_SPEED);
+    setOffset(getOffset().x + Direction.x * frameSpeed, getOffset().y + Direction.y * frameSpeed);
+    if (!Game::instance().getWorld().isValidPosition(NewPosition))
+      stop();
+    hitTest(NewPosition);
+  }
+}
+
 bool Bullet::hitTest(POINT position)
 {
   bool isFilledPosition = !Game::instance().getWorld().canMoveTo(position);

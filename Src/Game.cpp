@@ -221,7 +221,7 @@ void Game::addBullet(Bullet* bullet)
   world_.getBullets()->push_back(std::shared_ptr<Bullet>(bullet));
 }
 
-void Game::update()
+void Game::update(UINT elapsed)
 {
   auto tiles = world_.getTiles();
   auto bullets = world_.getBullets();
@@ -231,7 +231,7 @@ void Game::update()
     tile->update();
 
    for (auto&& bullet : *bullets)
-    bullet->update();
+    bullet->update(elapsed);
 
   if (world_.isNoEnemy() || world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead())
   {
