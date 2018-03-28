@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "World.h"
 
-#include <algorithm>
 #include <math.h>
 
 #include "Game.h"

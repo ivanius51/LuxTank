@@ -3,8 +3,6 @@
 #include <thread>
 #include <iostream>
 
-#include <windows.h>
-
 #include "Game.h"
 #include "GlobalVariables.h"
 

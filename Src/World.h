@@ -1,10 +1,6 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#define NOMINMAX
-#include <Windows.h>
-#include <memory>
-
 #include "GameObject.h"
 
 class World

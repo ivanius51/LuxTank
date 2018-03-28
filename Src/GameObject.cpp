@@ -1,8 +1,6 @@
 #include "stdafx.h"
-
-#include <algorithm>
-
 #include "GameObject.h"
+
 #include "Game.h"
 
 GameObject::GameObject(POINT position, UINT hp, int attackDamage)

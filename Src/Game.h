@@ -1,9 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <Windows.h>
-#include <memory>
-
 #include "GameObject.h"
 #include "Command.h"
 

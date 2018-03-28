@@ -11,6 +11,16 @@
 #include <stdio.h>
 #include <tchar.h>
 
+#define NOMINMAX
+#include <Windows.h>
+
+#include <string>
+#include <algorithm>
+#include <memory>
+#include <vector>
+
+//#include <cmath>
+
 #endif //STDAFX_H
 
 // TODO: Установите здесь ссылки на дополнительные заголовки, требующиеся для программы

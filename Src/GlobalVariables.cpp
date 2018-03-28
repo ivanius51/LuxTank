@@ -1,6 +1,5 @@
 #include "stdafx.h"
-#include <Windows.h>
-#include "GameObject.h"
+#include "GlobalVariables.h"
 
 double PI = 3.141592;
 
@@ -44,11 +43,6 @@ const std::string WALL_TEXTURE = "res/wall.bmp";
 const std::string TANK_GREEN_1 = "res/tankgreen.bmp";
 const std::string TANK_BLUE_1 = "res/tankblue.bmp";
 POINT DEFAULT_DIRECTION = { 0, -1 };
-
-bool CompareGameObjectPoint(GameObject & gameobject, POINT & point)
-{
-  return point.y == gameobject.getPosition().y && point.x == gameobject.getPosition().x;
-}
 
 inline int SQR(int x)
 {
@@ -234,7 +228,7 @@ namespace gdi {
     HGDIOBJ dstold = SelectObject(hdcDestination, result);
     if (dstold)
     {
-      drawBitmap(hdcDestination, 0, 0, hBitmap);
+      drawBitmap(hdcDestination, 0, 0, hBitmap, false);
       SelectObject(hdcDestination, dstold);
     }
     DeleteDC(hdcDestination);

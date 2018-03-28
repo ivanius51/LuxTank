@@ -1,15 +1,13 @@
-#include <exception>
-
 #include "stdafx.h"
-#include <algorithm>
-#include <string>
+#include "Game.h"
+
+#include <exception>
 #include <iostream>
 #include <conio.h>
-
 #include <math.h>
 
 #include "GameObject.h"
-#include "Game.h"
+
 
 
 Game& Game::instance()

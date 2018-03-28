@@ -1,6 +1,6 @@
 #ifndef GLOBALVARIABLES_H
 #define GLOBALVARIABLES_H
-#include "GameObject.h"
+#include "stdafx.h"
 
 struct PointComarator {
   bool operator() (const POINT& point1, const POINT& point2) const

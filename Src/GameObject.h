@@ -2,11 +2,7 @@
 #define GAMEOBJECT_H
 
 #include <vector>
-#include <memory>
 #include <functional>
-
-#define NOMINMAX
-#include <Windows.h>
 
 #include "GlobalVariables.h"
 
