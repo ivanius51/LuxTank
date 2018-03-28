@@ -22,9 +22,13 @@ public:
   bool isNoEnemy();
   int enemyCount();
   std::vector<std::shared_ptr<GameObject>>* getTiles();
+  std::vector<std::shared_ptr<Bullet>>* getBullets();
+
+  void objectsClear();
+  void bulletsClear();
+
   GameObject* getObject(int x, int y);
   GameObject* getObject(POINT point);
-  void objectsClear();
   bool deleteObject(GameObject* gameobject);
   bool isWalkable(int x, int y);
   bool isWalkable(POINT point);
@@ -46,6 +50,7 @@ private:
   std::weak_ptr<GameObject> player_;
   std::weak_ptr<GameObject> gold_;
   std::vector<std::shared_ptr<GameObject>> tiles_;
+  std::vector<std::shared_ptr<Bullet>> bullets_;
 };
 
 #endif // WORLD_H

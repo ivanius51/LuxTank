@@ -213,24 +213,24 @@ void Game::clearInput()
 
 void Game::addBullet(std::shared_ptr<Bullet> bullet)
 {
-  bullets_.push_back(bullet);
+  world_.getBullets()->push_back(bullet);
 }
 
 void Game::addBullet(Bullet* bullet)
 {
-  bullets_.push_back(std::shared_ptr<Bullet>(bullet));
+  world_.getBullets()->push_back(std::shared_ptr<Bullet>(bullet));
 }
 
 void Game::update()
 {
   auto tiles = world_.getTiles();
-  //auto bullets = world_.getBullets();
+  auto bullets = world_.getBullets();
 
   //Objects update
   for (auto&& tile : *tiles)
     tile->update();
 
-   for (auto&& bullet : bullets_)
+   for (auto&& bullet : *bullets)
     bullet->update();
 
   if (world_.isNoEnemy() || world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead())
@@ -251,6 +251,7 @@ void Game::update()
     pause();
   }
 
+  /*
   //remove collided(stopped) bullets
   bullets_.erase(
     std::remove_if(bullets_.begin(), bullets_.end(),
@@ -258,12 +259,12 @@ void Game::update()
   ), bullets_.end());
 
   //remove Died(destroyed) objects
-  /*
   tiles->erase(
     std::remove_if(tiles->begin(), tiles->end(),
       [](std::shared_ptr<GameObject> object) {return object->isDead(); }
   ), tiles->end());
   */
+  world_.bulletsClear();
   world_.objectsClear();
 }
 
@@ -448,7 +449,7 @@ void Game::drawBorder()
 
 void Game::renderObjects()
 {
-  //auto bullets = *world_.getBullets();
+  auto bullets = *world_.getBullets();
   auto tiles = world_.getTiles();
 
   HGDIOBJ replacedBuffer = SelectObject(bufferDc_, buffer_);
@@ -457,7 +458,7 @@ void Game::renderObjects()
   //clear buufer
   BitBlt(bufferDc_, 0, 0, windowSize_, windowSize_, bufferDc_, 0, 0, BLACKNESS);
   //std::map<POINT, GameObject*>::const_iterator
-  for (auto&& bullet : bullets_)
+  for (auto&& bullet : bullets)
     bullet->draw();
   for (auto object = tiles->begin(); object != tiles->end(); object++)
     object->get()->draw();

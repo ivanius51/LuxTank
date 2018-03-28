@@ -83,8 +83,6 @@ private:
   UINT score_ = 0;
   //input
   std::vector<std::unique_ptr<Command>> inputs_;
-  //bullets
-  std::vector<std::shared_ptr<Bullet>> bullets_;
 
   std::string gameResult_ = "Paused";
 

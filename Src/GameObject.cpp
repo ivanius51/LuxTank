@@ -773,6 +773,8 @@ void Bullet::update()
     NewPosition.x += (getOffset().x + (Direction.x * TileSize / 2)) / TileSize;
     NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
     setOffset(getOffset().x + Direction.x * speed_, getOffset().y + Direction.y * speed_);
+    if (!Game::instance().getWorld().isValidPosition(NewPosition))
+      stop();
     hitTest(NewPosition);
   }
 }

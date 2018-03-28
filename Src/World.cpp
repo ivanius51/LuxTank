@@ -32,6 +32,11 @@ std::vector<std::shared_ptr<GameObject>>* World::getTiles()
   return &tiles_;
 }
 
+std::vector<std::shared_ptr<Bullet>>* World::getBullets()
+{
+  return &bullets_;
+}
+
 GameObject* World::getObject(POINT point)
 {
   auto tile = std::find_if(tiles_.begin(), tiles_.end(),
@@ -50,6 +55,14 @@ void World::objectsClear()
     std::remove_if(tiles_.begin(), tiles_.end(),
       [](std::shared_ptr<GameObject> object) {return object->isDead(); }
   ), tiles_.end());
+}
+
+void World::bulletsClear()
+{
+  bullets_.erase(
+    std::remove_if(bullets_.begin(), bullets_.end(),
+      [](std::shared_ptr<Bullet> bullet) {return (!bullet->isMooving() || bullet->isDead()); }
+  ), bullets_.end());
 }
 
 bool World::deleteObject(GameObject* gameobject)
