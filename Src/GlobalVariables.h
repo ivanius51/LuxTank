@@ -54,36 +54,36 @@ namespace gdi
   extern void rotateTexture2(HBITMAP hBitmap, const int degres, bool AdjustSize = false);
   extern HBITMAP copyBitmap(HBITMAP hBitmap);
 }
-extern double PI;
+extern const double PI;
 
-extern int MAX_FPS;
-extern int MAP_SIZE;
-extern int TILE_SIZE;
+extern const int MAX_FPS;
+extern const int MAP_SIZE;
+extern const int TILE_SIZE;
 extern int MAX_ENEMY_COUNT;
 
 extern int WALL_HP;
 extern int GOLD_HP;
 extern int PLAYER_LIVES;
 
-extern int MSEC_IN_SEC;
-extern int SEC_IN_MIN;
-extern int MKS_IN_SEC;
+extern const int MSEC_IN_SEC;
+extern const int SEC_IN_MIN;
+extern const int MKS_IN_SEC;
 
 extern int ENEMY_SHOOT_DELAY;
 extern int PLAYER_SHOOT_DELAY;
 extern int ENEMY_UPDATE_DELAY;
 
-extern double DEFAULT_BULLET_SPEED;
-extern double DEFAULT_OBJECT_SPEED;
+extern const double DEFAULT_BULLET_SPEED;
+extern const double DEFAULT_OBJECT_SPEED;
 
 extern int VISIBLE_DISTANCE;
 
 extern bool DEBUG_DRAW_COLLISIONS;
 
-extern int KEY_UP;
-extern int KEY_DOWN;
-extern int KEY_LEFT;
-extern int KEY_RIGHT;
+extern const int KEY_UP;
+extern const int KEY_DOWN;
+extern const int KEY_LEFT;
+extern const int KEY_RIGHT;
 
 extern COLORREF WALL_COLOR;
 extern COLORREF ALLY_COLOR;

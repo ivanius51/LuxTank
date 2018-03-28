@@ -1,36 +1,36 @@
 #include "stdafx.h"
 #include "GlobalVariables.h"
 
-double PI = 3.141592;
+double const PI = 3.141592;
 
-int MAX_FPS = 60;
+int const MAX_FPS = 60;
 
-int MAP_SIZE = 15;
-int TILE_SIZE = 32;
+int const MAP_SIZE = 15;
+int const TILE_SIZE = 32;
 int MAX_ENEMY_COUNT = 10;
 
 int PLAYER_LIVES = 3;
 int WALL_HP = 4;
 int GOLD_HP = 1;
 
-int MSEC_IN_SEC = 1000;
-int SEC_IN_MIN = 60;
-int MKS_IN_SEC = 1000000;
+int const MSEC_IN_SEC = 1000;
+int const SEC_IN_MIN = 60;
+int const MKS_IN_SEC = 1000000;
 
 int ENEMY_UPDATE_DELAY = 750;
 int ENEMY_SHOOT_DELAY = 800;
 int PLAYER_SHOOT_DELAY = 400;
 
-double DEFAULT_BULLET_SPEED = 0.14;
-double DEFAULT_OBJECT_SPEED = 0.07;
+double const DEFAULT_BULLET_SPEED = 0.14;
+double const DEFAULT_OBJECT_SPEED = 0.07;
 int VISIBLE_DISTANCE = 6;
 
 bool DEBUG_DRAW_COLLISIONS = false;
 
-int KEY_UP = 72;
-int KEY_DOWN = 80;
-int KEY_LEFT = 75;
-int KEY_RIGHT = 77;
+int const KEY_UP = 72;
+int const KEY_DOWN = 80;
+int const KEY_LEFT = 75;
+int const KEY_RIGHT = 77;
 
 COLORREF WALL_COLOR = RGB(156, 74, 0);
 COLORREF ALLY_COLOR = RGB(0, 128, 0);
