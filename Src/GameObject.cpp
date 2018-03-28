@@ -789,7 +789,8 @@ void Bullet::update(UINT elapsed)
     POINT NewPosition = getPosition();
     NewPosition.x += (getOffset().x + (Direction.x * TileSize / 2)) / TileSize;
     NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
-    int frameSpeed = int(elapsed * DEFAULT_BULLET_SPEED);
+    double frameSpeed = elapsed * DEFAULT_BULLET_SPEED + modf(frameTime_, &frameTime_);
+    frameTime_ = frameSpeed;
     setOffset(getOffset().x + Direction.x * frameSpeed, getOffset().y + Direction.y * frameSpeed);
     if (!Game::instance().getWorld().isValidPosition(NewPosition))
       stop();

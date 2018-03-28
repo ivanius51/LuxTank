@@ -45,6 +45,7 @@ protected:
   void setIsWalkable(bool walkable);
   POINT getOldDirection();
   void setOldDirection();
+  double frameTime_ = 0;
 private:
   int hp_ = 0;
   UINT maxHp_ = 0;
@@ -54,7 +55,6 @@ private:
   POINT position_ = { 0, 0 };
   POINT direction_ = { 0, -1 };
   POINT oldDirection_ = { 0, -1 };
-  UINT32 updateTime_;
   std::vector<std::function<void(GameObject&)>> updateCallbacks_;
   UINT32 drawTime_;
 };

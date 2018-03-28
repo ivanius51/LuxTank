@@ -10,24 +10,26 @@
 
 void gameLoop()
 {
+  UINT lastTime = GetTickCount();
   while (Game::instance().isRunning())
   {
     UINT startTime = GetTickCount();
+    UINT elapsedTime = startTime - lastTime;
+    if (elapsedTime <= 0)
+      elapsedTime = 1;
 
     Game::instance().readInput();
     Game::instance().useInput();
 
     if (!Game::instance().isPaused())
     {
-      Game::instance().update();
+      Game::instance().update(elapsedTime);
       Game::instance().draw();
     }
     else
       Game::instance().showResult();
 
-    UINT elapsedTime = GetTickCount() - startTime;
-    if (elapsedTime <= 0)
-      elapsedTime = 1;
+    lastTime = startTime;
     double fps = 1000 / elapsedTime;
     if (Game::instance().getFrameDelay() > elapsedTime)
       //Sleep(Game::instance().getFrameDelay() - elapsedTime);//windows
