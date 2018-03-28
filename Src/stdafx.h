@@ -3,13 +3,14 @@
 // не часто изменяются
 //
 
-#pragma once
+#ifndef STDAFX_H
+#define STDAFX_H
 
 #include "targetver.h"
 
 #include <stdio.h>
 #include <tchar.h>
 
-
+#endif //STDAFX_H
 
 // TODO: Установите здесь ссылки на дополнительные заголовки, требующиеся для программы

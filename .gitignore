@@ -47,3 +47,5 @@
 *.ipdb
 *.filters
 *.vcxproj
+*.db-shm
+*.db-wal

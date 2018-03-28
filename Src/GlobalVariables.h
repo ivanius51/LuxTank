@@ -1,4 +1,3 @@
-//#pragma once
 #ifndef GLOBALVARIABLES_H
 #define GLOBALVARIABLES_H
 #include "GameObject.h"
