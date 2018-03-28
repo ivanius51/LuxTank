@@ -22,7 +22,7 @@ public:
   void useInput();
   void clearInput();
 
-  void update(UINT elapsed = 1);
+  void update(double elapsed = 1.0);
   void draw();
   void test();
   //
@@ -32,6 +32,7 @@ public:
   void resume();
   bool isRunning();
   bool isPaused();
+  bool isGameOver();
   void increaseScore();
   void showResult();
   //
@@ -49,9 +50,9 @@ public:
   HBITMAP getStaticLayer();
   void drawBitmap(int x, int y, HBITMAP hBitmap, bool transparent = false);
 
-  UINT avgFrameTime = 0;
-  UINT frameTime = 0;
-  UINT frameCounter = 0;
+  INT64 avgFrameTime = 0;
+  INT64 frameTime = 0;
+  INT64 frameCounter = 0;
 protected:
 private:
   //Singlton
@@ -83,8 +84,8 @@ private:
   UINT score_ = 0;
   //input
   std::vector<std::unique_ptr<Command>> inputs_;
-
   std::string gameResult_ = "Paused";
+  bool gameOver_ = false;
 
   void drawBorder();
   void renderObjects();

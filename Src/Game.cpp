@@ -35,10 +35,7 @@ void Game::initialization(HWND handle, bool topmost, UINT mapSize, UINT tileSize
 
     world_ = World(mapSize, tileSize);
 
-    if (fpsmax > 500)
-      frameDelay_ = 1;
-    else
-      frameDelay_ = int(1000 / fpsmax);
+    frameDelay_ = lround(MKS_IN_SEC / fpsmax);
 
     //hide cursor of console
     HANDLE consoleOutputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -96,10 +93,10 @@ void Game::initialization(HWND handle, bool topmost, UINT mapSize, UINT tileSize
       throw std::runtime_error("can't Create Bitmap Buffer");
 
     staticLayerDc_ = CreateCompatibleDC(hdc_);
-    if (!bufferDc_)
+    if (!staticLayerDc_)
       throw std::runtime_error("can't Create DC Buffer");
     staticLayer_ = CreateCompatibleBitmap(hdc_, windowSize_ + borderSize_ * 2, windowSize_ + borderSize_ * 2);
-    if (!buffer_)
+    if (!staticLayer_)
       throw std::runtime_error("can't Create Bitmap Buffer");
 
     world_.generateNewMap();
@@ -147,7 +144,7 @@ void Game::readInput()
     //one commands
     if (_kbhit())
     {
-      int symbol = getch();
+      int symbol = _getch();
       //if (symbol == 0 || symbol == 224 || symbol == -32)
       //{
       //  symbol = 0;
@@ -221,34 +218,34 @@ void Game::addBullet(Bullet* bullet)
   world_.getBullets()->push_back(std::shared_ptr<Bullet>(bullet));
 }
 
-void Game::update(UINT elapsed)
+void Game::update(double elapsed)
 {
   auto tiles = world_.getTiles();
   auto bullets = world_.getBullets();
 
   //Objects update
   for (auto&& tile : *tiles)
-    tile->update();
+    tile->update(elapsed);
 
-   for (auto&& bullet : *bullets)
+  for (auto&& bullet : *bullets)
     bullet->update(elapsed);
 
-  if (world_.isNoEnemy() || world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead())
+  gameOver_ = world_.isNoEnemy() || world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead();
+  if (gameOver_)
   {
-    pause();
-    if (world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead())
+    //pause();
+    if (!world_.isNoEnemy())
     {
       //GameOver
       gameResult_ = "GameOver";
     }
     else
-      if (world_.isNoEnemy())
-      {
-        //Victory
-        gameResult_ = "Victory";
-      }
+    {
+      //Victory
+      gameResult_ = "Victory";
+    }
     showResult();
-    pause();
+    //pause();
   }
 
   /*
@@ -270,14 +267,14 @@ void Game::update(UINT elapsed)
 
 void Game::draw()
 {
-  UINT startDrawTime = GetTickCount();
+  UINT startDrawTime = getTimeMks();// GetTickCount();
   drawBorder();
   renderObjects();
   drawObjects();
   drawGui();
 
   frameCounter++;
-  frameTime = GetTickCount() - startDrawTime;
+  frameTime = getTimeMks(startDrawTime);//GetTickCount() - startDrawTime;
   if (avgFrameTime == 0)
     avgFrameTime = frameTime;
   else
@@ -307,7 +304,7 @@ void Game::startGame()
     drawBorder();
     renderObjects();
     replacedStatic = SelectObject(staticLayerDc_, staticLayer_);
-    hfont = CreateFont(-tilesize * ((i % 40) / 2), 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, "SYSTEM_FIXED_FONT");
+    hfont = CreateFont(tilesize * ((i % 40) / -2), 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, "SYSTEM_FIXED_FONT");
     SelectObject(staticLayerDc_, hfont);
     if (i > 40)
       strOut = std::to_string(i / 40);
@@ -326,6 +323,7 @@ void Game::startGame()
   SelectObject(staticLayerDc_, oldfont);
   DeleteObject(hfont);
   resume();
+  startTime_ = GetTickCount();
 }
 
 void Game::stopGame()
@@ -353,6 +351,11 @@ bool Game::isPaused()
   return isPaused_;
 }
 
+bool Game::isGameOver()
+{
+  return gameOver_;
+}
+
 void Game::increaseScore()
 {
   score_++;
@@ -367,7 +370,7 @@ void Game::showResult()
   drawBorder();
   renderObjects();
   HGDIOBJ replacedStatic = SelectObject(staticLayerDc_, staticLayer_);
-  HFONT hfont = CreateFont(-tilesize * 3, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, "SYSTEM_FIXED_FONT");
+  HFONT hfont = CreateFont(tilesize * -3, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 0, 0, "SYSTEM_FIXED_FONT");
   HGDIOBJ oldfont = SelectObject(staticLayerDc_, hfont);
   SelectObject(staticLayerDc_, hfont);
   GetTextExtentPoint32(staticLayerDc_, gameResult_.c_str(), gameResult_.length(), &textsize);
@@ -503,7 +506,8 @@ void Game::drawGui()
   GetTextExtentPoint32(textLayerDc_, strOut.c_str(), strOut.length(), &textsize);
   TextOut(textLayerDc_, windowSize_ + borderSize_ * 2 - textsize.cx - borderSize_, borderSize_, strOut.c_str(), strOut.length());
 
-  BitBlt(hdc_, 0, 0, windowSize_ + borderSize_ * 2, textHeightPx_, textLayerDc_, 0, 0, SRCCOPY);
+  //BitBlt(hdc_, 0, 0, windowSize_ + borderSize_ * 2, textHeightPx_, textLayerDc_, 0, 0, SRCCOPY);
   //deselect a textLayer_ bitmap for use int other DC
   SelectObject(textLayerDc_, replaced);
+  drawBitmap(0, 0, textLayer_, false);
 }

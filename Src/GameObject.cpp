@@ -374,12 +374,6 @@ Wall::Wall(POINT point, UINT hp, int attackDamage, const std::string & texture, 
 void Wall::draw()
 {
   VisualObject::draw();
-  /*
-  if (targetdc_ != 0 && targeBitmap_ != 0)
-    drawTo(targetdc_, targeBitmap_);
-  else
-    drawTo(Game::instance().getBufferDc(), Game::instance().getBuffer());
-  */
 }
 
 void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
@@ -421,12 +415,15 @@ void Wall::drawTo(HDC hdc, HBITMAP hbitmap)
   };
 }
 
-void Wall::update()
+void Wall::update(double elapsed)
 {
   if (isDead())
   {
     Game::instance().getWorld().deleteObject(this);
   }
+  
+  double frameSpeed = elapsed * DEFAULT_BULLET_SPEED + modf(frameTime_, &frameTime_);
+  frameTime_ = frameSpeed;
   //updateCallback();
 }
 
@@ -564,12 +561,6 @@ void Tank::shoot()
 void Tank::draw()
 {
   MovableObject::draw();
-  /*
-  if (targetdc_ != 0 && targeBitmap_ != 0)
-    drawTo(targetdc_, targeBitmap_);
-  else
-    drawTo(Game::instance().getBufferDc(), Game::instance().getBuffer());
-  */
 }
 
 void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
@@ -627,10 +618,13 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
   };
 }
 
-void Tank::update()
+void Tank::update(double elapsed)
 {
   if (isDead())
     Game::instance().getWorld().deleteObject(this);
+  
+  double frameSpeed = elapsed * DEFAULT_OBJECT_SPEED + modf(frameTime_, &frameTime_);
+  frameTime_ = frameSpeed;
 
   int TileSize = Game::instance().getWorld().getTileSize();
   int MapSize = Game::instance().getWorld().getMapSize();
@@ -651,7 +645,7 @@ void Tank::update()
     }
     else
     {
-      setOffset(getOffset().x + Direction.x * DEFAULT_OBJECT_SPEED, getOffset().y + Direction.y * DEFAULT_OBJECT_SPEED);
+      setOffset(getOffset().x + int(Direction.x * frameSpeed), getOffset().y + int(Direction.y * frameSpeed));
       if (!Game::instance().getWorld().canMoveTo(NewPosition) && (abs(getOffset().x) >= (TileSize / 5) || abs(getOffset().y) >= (TileSize / 5)))
       {
         stop();
@@ -726,12 +720,6 @@ Bullet::Bullet(Tank* tank, UINT speed)
 void Bullet::draw()
 {
   VisualObject::draw();
-  /*
-  if (targetdc_ != 0 && targeBitmap_ != 0)
-    drawTo(targetdc_, targeBitmap_);
-  else
-    drawTo(Game::instance().getBufferDc(), Game::instance().getBuffer());
-  */
 }
 void Bullet::drawTo(HDC hdc, HBITMAP hbitmap)
 {
@@ -779,7 +767,7 @@ void Bullet::update()
   }
 }
 
-void Bullet::update(UINT elapsed)
+void Bullet::update(double elapsed)
 {
   int TileSize = Game::instance().getWorld().getTileSize();
   int MapSize = Game::instance().getWorld().getMapSize();
@@ -791,7 +779,7 @@ void Bullet::update(UINT elapsed)
     NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
     double frameSpeed = elapsed * DEFAULT_BULLET_SPEED + modf(frameTime_, &frameTime_);
     frameTime_ = frameSpeed;
-    setOffset(getOffset().x + Direction.x * frameSpeed, getOffset().y + Direction.y * frameSpeed);
+    setOffset(getOffset().x + lround(Direction.x * frameSpeed), getOffset().y + lround(Direction.y * frameSpeed));
     if (!Game::instance().getWorld().isValidPosition(NewPosition))
       stop();
     hitTest(NewPosition);

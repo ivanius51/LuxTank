@@ -8,7 +8,7 @@ int MAX_FPS = 60;
 
 int MAP_SIZE = 15;
 int TILE_SIZE = 32;
-int MAX_ENEMY_COUNT = 1;
+int MAX_ENEMY_COUNT = 10;
 
 int PLAYER_LIVES = 3;
 int WALL_HP = 4;
@@ -16,13 +16,14 @@ int GOLD_HP = 1;
 
 int MSEC_IN_SEC = 1000;
 int SEC_IN_MIN = 60;
+int MKS_IN_SEC = 1000000;
 
 int ENEMY_UPDATE_DELAY = 750;
-int ENEMY_SHOOT_DELAY = 750;
-int PLAYER_SHOOT_DELAY = 250;
+int ENEMY_SHOOT_DELAY = 800;
+int PLAYER_SHOOT_DELAY = 400;
 
 double DEFAULT_BULLET_SPEED = 0.14;
-UINT DEFAULT_OBJECT_SPEED = 1;
+double DEFAULT_OBJECT_SPEED = 0.07;
 int VISIBLE_DISTANCE = 6;
 
 bool DEBUG_DRAW_COLLISIONS = false;
@@ -61,6 +62,17 @@ bool circleIntersection(POINT first, POINT second, UINT radius1, UINT radius2)
 {
   int distance = int(pointDistance(first, second));
   return distance <= (radius1 + radius2);//std::abs(int(radius1 - radius2)) <= 
+}
+INT64 getTimeMks(INT64 oldTimeMks)
+{
+  LARGE_INTEGER result;
+  LARGE_INTEGER frequency;
+  QueryPerformanceFrequency(&frequency);
+  QueryPerformanceCounter(&result);
+  result.QuadPart = result.QuadPart * MKS_IN_SEC / frequency.QuadPart;
+  if (oldTimeMks)
+    result.QuadPart -= oldTimeMks;
+  return result.QuadPart;
 }
 namespace gdi {
   HBRUSH createBrush(UINT style, COLORREF color, ULONG_PTR hatch)
@@ -154,17 +166,17 @@ namespace gdi {
         int Height = bitmap.bmHeight;
         if (AdjustSize)
         {
-          Width = round(bitmap.bmWidth * abs(Cosinus) + bitmap.bmHeight * abs(Sinus));
-          Height = round(bitmap.bmWidth * abs(Sinus) + bitmap.bmHeight * abs(Cosinus));
+          Width = lround(bitmap.bmWidth * abs(Cosinus) + bitmap.bmHeight * abs(Sinus));
+          Height = lround(bitmap.bmWidth * abs(Sinus) + bitmap.bmHeight * abs(Cosinus));
         }
-        int OffsetX = (Width - Width * Cosinus + Height * Sinus) / 2;
-        int OffsetY = (Height - Width * Sinus - Height * Cosinus) / 2;
-        Points[0].x = round(OffsetX);
-        Points[0].y = round(OffsetY);
-        Points[1].x = round(OffsetX + Width * Cosinus);
-        Points[1].y = round(OffsetY + Width * Sinus);
-        Points[2].x = round(OffsetX - Height * Sinus);
-        Points[2].y = round(OffsetY + Height * Cosinus);
+        int OffsetX = lround((Width - Width * Cosinus + Height * Sinus) / 2);
+        int OffsetY = lround((Height - Width * Sinus - Height * Cosinus) / 2);
+        Points[0].x = lround(OffsetX);
+        Points[0].y = lround(OffsetY);
+        Points[1].x = lround(OffsetX + Width * Cosinus);
+        Points[1].y = lround(OffsetY + Width * Sinus);
+        Points[2].x = lround(OffsetX - Height * Sinus);
+        Points[2].y = lround(OffsetY + Height * Cosinus);
         PlgBlt(hDC, Points, hDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, 0, 0, 0);
       }
       SelectObject(hDC, replaced);
@@ -182,7 +194,6 @@ namespace gdi {
       BITMAP bitmap;
       GetObject(hBitmap, sizeof(BITMAP), &bitmap);
       {
-        POINT Points[3];
         double radians = (degres * PI) / 180;
         double Cosinus = cos(radians);
         double Sinus = sin(radians);
@@ -195,8 +206,8 @@ namespace gdi {
         int Height;
         if (AdjustSize)
         {
-          Width = round(bitmap.bmWidth * abs(Cosinus) + bitmap.bmHeight * abs(Sinus));
-          Height = round(bitmap.bmWidth * abs(Sinus) + bitmap.bmHeight * abs(Cosinus));
+          Width = lround(bitmap.bmWidth * abs(Cosinus) + bitmap.bmHeight * abs(Sinus));
+          Height = lround(bitmap.bmWidth * abs(Sinus) + bitmap.bmHeight * abs(Cosinus));
         }
         else
         {

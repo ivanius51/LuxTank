@@ -43,9 +43,7 @@ public:
   }
 };
 */
-extern inline int SQR(int x);
-extern double pointDistance(POINT first, POINT second);
-extern bool circleIntersection(POINT first, POINT second, UINT radius1, UINT radius2);
+
 
 namespace gdi 
 {
@@ -70,13 +68,14 @@ extern int PLAYER_LIVES;
 
 extern int MSEC_IN_SEC;
 extern int SEC_IN_MIN;
+extern int MKS_IN_SEC;
 
 extern int ENEMY_SHOOT_DELAY;
 extern int PLAYER_SHOOT_DELAY;
 extern int ENEMY_UPDATE_DELAY;
 
 extern double DEFAULT_BULLET_SPEED;
-extern UINT DEFAULT_OBJECT_SPEED;
+extern double DEFAULT_OBJECT_SPEED;
 
 extern int VISIBLE_DISTANCE;
 
@@ -98,5 +97,9 @@ extern const std::string TANK_GREEN_1;
 extern const std::string TANK_BLUE_1;
 extern POINT DEFAULT_DIRECTION;
 
+extern inline int SQR(int x);
+extern double pointDistance(POINT first, POINT second);
+extern bool circleIntersection(POINT first, POINT second, UINT radius1, UINT radius2);
+extern INT64 getTimeMks(INT64 oldTimeMks = 0);
 
 #endif

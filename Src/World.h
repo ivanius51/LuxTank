@@ -33,7 +33,7 @@ public:
   bool isWalkable(int x, int y);
   bool isWalkable(POINT point);
   bool isValidPosition(POINT point);
-  bool isValidPosition(int x, int y);
+  bool isValidPosition(UINT x, UINT y);
   bool canMoveTo(POINT point);
   bool canMoveTo(int x, int y);
   bool isInVisibleDistance(POINT first, POINT second);

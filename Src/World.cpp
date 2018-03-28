@@ -103,7 +103,7 @@ bool World::isValidPosition(POINT point)
   return isValidPosition(point.x, point.y);
 }
 
-bool World::isValidPosition(int x, int y)
+bool World::isValidPosition(UINT x, UINT y)
 {
   return ((x >= 0) && (x < mapSize_)) && ((y >= 0) && (y < mapSize_));
 }
@@ -214,11 +214,11 @@ void World::generateNewMap()
   POINT point;
   std::shared_ptr<GameObject> gameobject;
   //random walls
-  for (int i = 0; i < mapSize_; i++)
-    for (int j = 0; j < mapSize_ - 2; j++)
+  for (UINT i = 0; i < mapSize_; i++)
+    for (UINT j = 0; j < mapSize_ - 2; j++)
       if (rand() % 100 < 20)
       {
-        point = { i, j };
+        point = { lround(i), lround(j) };
         gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE, WALL_COLOR));
         //gameobject.get()->bindUpdateCallback([](GameObject& gameobject) {if (gameobject.isDead()) World::instance().stopGame(); });
         tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
@@ -260,10 +260,10 @@ void World::spawnEnemys()
   POINT point;
   std::shared_ptr<GameObject> gameobject;
   int enemies = enemyCount();
-  for (int i = 0; i <= int(mapSize_ * 0.7); i++)
-    for (int j = 1; j < mapSize_; j++)
+  for (UINT i = 0; i <= UINT(mapSize_ * 0.7); i++)
+    for (UINT j = 1; j < mapSize_; j++)
     {
-      point = { j, i };
+      point = { lround(j), lround(i) };
       if ((rand() % 100 < 50) && (enemies < MAX_ENEMY_COUNT) &&
         (canCreateTank(point)))
       {

@@ -29,7 +29,7 @@ public:
   virtual void takeDamage(int damage, POINT damageDirection) = 0;
   virtual void draw() = 0;
   virtual void drawTo(HDC hdc, HBITMAP hbitmap) = 0;
-  virtual void update() = 0;
+  virtual void update(double elapsed) = 0;
   void bindUpdateCallback(std::function<void(GameObject&)> function);
   void updateCallback(GameObject& gameobject);
   void updateCallback();
@@ -110,7 +110,7 @@ public:
   Wall(POINT point, UINT hp = WALL_HP, int attackDamage = 0, const std::string& texture = WALL_TEXTURE, COLORREF color = COLOR_BLACK, UINT width = 0, UINT height = 0);
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
-  void update();
+  void update(double elapsed);
 protected:
 private:
 };
@@ -145,7 +145,7 @@ public:
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
-  void update(UINT elapsed);
+  void update(double elapsed);
   bool hitTest(POINT position);
 protected:
 private:
@@ -163,7 +163,7 @@ public:
   void shoot();
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
-  void update();
+  void update(double elapsed);
   bool isEnemy();
   bool isEnemy(GameObject* gamobject);
   void setEnemy(bool enemy);
