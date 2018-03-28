@@ -30,10 +30,13 @@ void gameLoop()
       Game::instance().showResult();
 
     lastTime = startTime;
-    double fps = 1000 / elapsedTime;
-    if (Game::instance().getFrameDelay() > elapsedTime)
+    UINT elapsed = (GetTickCount() - startTime);
+    if (elapsed <= 0)
+      elapsed = 1;
+    double fps = 1000 / elapsed;
+    if (Game::instance().getFrameDelay() > elapsed)
       //Sleep(Game::instance().getFrameDelay() - elapsedTime);//windows
-      std::this_thread::sleep_for(std::chrono::milliseconds(Game::instance().getFrameDelay() - elapsedTime));
+      std::this_thread::sleep_for(std::chrono::milliseconds(Game::instance().getFrameDelay() - elapsed));
   }
 }
 
