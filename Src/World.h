@@ -24,6 +24,7 @@ public:
   std::vector<std::shared_ptr<GameObject>>* getTiles();
   GameObject* getObject(int x, int y);
   GameObject* getObject(POINT point);
+  void objectsClear();
   bool deleteObject(GameObject* gameobject);
   bool isWalkable(int x, int y);
   bool isWalkable(POINT point);

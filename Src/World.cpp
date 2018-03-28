@@ -44,6 +44,14 @@ GameObject* World::getObject(POINT point)
     return nullptr;
 }
 
+void World::objectsClear()
+{
+  tiles_.erase(
+    std::remove_if(tiles_.begin(), tiles_.end(),
+      [](std::shared_ptr<GameObject> object) {return object->isDead(); }
+  ), tiles_.end());
+}
+
 bool World::deleteObject(GameObject* gameobject)
 {
   auto tile = std::find_if(tiles_.begin(), tiles_.end(),

@@ -8,7 +8,7 @@ int MAX_FPS = 60;
 
 int MAP_SIZE = 15;
 int TILE_SIZE = 32;
-int MAX_ENEMY_COUNT = 10;
+int MAX_ENEMY_COUNT = 1;
 
 int PLAYER_LIVES = 3;
 int WALL_HP = 4;

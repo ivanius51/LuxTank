@@ -224,19 +224,14 @@ void Game::addBullet(Bullet* bullet)
 void Game::update()
 {
   auto tiles = world_.getTiles();
-  auto bullets = bullets_;// world_.getBullets();
+  //auto bullets = world_.getBullets();
 
   //Objects update
   for (auto&& tile : *tiles)
     tile->update();
 
-  for (auto&& bullet : bullets)
+   for (auto&& bullet : bullets_)
     bullet->update();
-  //remove collided(stopped) bullets
-  bullets.erase(
-    std::remove_if(bullets.begin(), bullets.end(),
-      [](std::shared_ptr<Bullet> bullet) {return !bullet->isMooving(); }
-  ), bullets.end());
 
   if (world_.isNoEnemy() || world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead())
   {
@@ -256,11 +251,20 @@ void Game::update()
     pause();
   }
 
+  //remove collided(stopped) bullets
+  bullets_.erase(
+    std::remove_if(bullets_.begin(), bullets_.end(),
+      [](std::shared_ptr<Bullet> bullet) {return !bullet->isMooving(); }
+  ), bullets_.end());
+
   //remove Died(destroyed) objects
+  /*
   tiles->erase(
     std::remove_if(tiles->begin(), tiles->end(),
       [](std::shared_ptr<GameObject> object) {return object->isDead(); }
   ), tiles->end());
+  */
+  world_.objectsClear();
 }
 
 void Game::draw()
@@ -444,7 +448,7 @@ void Game::drawBorder()
 
 void Game::renderObjects()
 {
-  auto bullets = bullets_;// *world_.getBullets();
+  //auto bullets = *world_.getBullets();
   auto tiles = world_.getTiles();
 
   HGDIOBJ replacedBuffer = SelectObject(bufferDc_, buffer_);
@@ -453,7 +457,7 @@ void Game::renderObjects()
   //clear buufer
   BitBlt(bufferDc_, 0, 0, windowSize_, windowSize_, bufferDc_, 0, 0, BLACKNESS);
   //std::map<POINT, GameObject*>::const_iterator
-  for (auto&& bullet : bullets)
+  for (auto&& bullet : bullets_)
     bullet->draw();
   for (auto object = tiles->begin(); object != tiles->end(); object++)
     object->get()->draw();
