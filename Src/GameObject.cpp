@@ -583,7 +583,7 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
         else
           if (getDirection().x == 1)
             degres = 90;
-      gdi::rotateTexture(texture, degres);
+      gdi::rotateBitmap(texture, degres);
       gdi::drawBitmap(hdc, Position.x, Position.y, TileSize, TileSize, texture, true);
       DeleteObject(texture);
     }

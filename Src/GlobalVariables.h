@@ -43,14 +43,14 @@ public:
 };
 */
 
-
+//GraphicEngine API
 namespace gdi 
 {
   extern HBRUSH createBrush(UINT style, COLORREF color, ULONG_PTR hatch);
   extern HPEN createPen(UINT style, COLORREF color, UINT width);
   extern void drawBitmap(HDC hdc, const int x, const int y, HBITMAP hBitmap, const bool transparent = false);
   extern void drawBitmap(HDC hdc, const int x, const int y, const int width, const int height, HBITMAP hBitmap, const bool transparent = false);
-  extern void rotateTexture(HBITMAP hBitmap, const int degres, bool AdjustSize = false);
+  extern void rotateBitmap(HBITMAP hBitmap, const int degres, bool AdjustSize = false);
   extern void rotateTexture2(HBITMAP hBitmap, const int degres, bool AdjustSize = false);
   extern HBITMAP copyBitmap(HBITMAP hBitmap);
 }
@@ -88,9 +88,7 @@ extern const int KEY_RIGHT;
 extern COLORREF WALL_COLOR;
 extern COLORREF ALLY_COLOR;
 extern COLORREF ENEMY_COLOR;
-extern COLORREF COLOR_GREY;
-extern COLORREF COLOR_YELLOW;
-extern COLORREF COLOR_BLACK;
+
 extern const std::string WALL_TEXTURE;
 extern const std::string TANK_GREEN_1;
 extern const std::string TANK_BLUE_1;

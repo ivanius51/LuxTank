@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include "Game.h"
-
+#include "GraphicEngine.h"
 
 World::World(UINT mapSize, UINT tileSize)
 {

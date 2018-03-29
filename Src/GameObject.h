@@ -4,7 +4,9 @@
 #include <vector>
 #include <functional>
 
+#include "GraphicEngine.h"
 #include "GlobalVariables.h"
+
 
 class GameObject
 {
