@@ -7,7 +7,7 @@
 #include <math.h>
 
 #include "GameObject.h"
-
+#include "GraphicEngine.h"
 
 
 Game& Game::instance()
@@ -270,7 +270,7 @@ void Game::renderFrame()
   renderObjects();
   drawObjects();
   drawGui();
-  
+
   frameCounter++;
   frameTime = getTimeMks(startDrawTime);//GetTickCount() - startDrawTime;
   if (avgFrameTime == 0)
@@ -293,7 +293,8 @@ void Game::startGame()
 {
   //need draw this to other bitmap, but not have time right now
   renderFrame();
-  draw();
+  gdi::drawBitmap(hdc_,0,0,buffer_);
+  //draw();
   UINT tilesize = world_.getTileSize();
   HFONT hfont = NULL;
   HGDIOBJ oldfont = SelectObject(staticLayerDc_, hfont);
@@ -302,6 +303,7 @@ void Game::startGame()
   SetTextColor(staticLayerDc_, RGB(255, 255, 255));
   SetBkMode(staticLayerDc_, TRANSPARENT);
   std::string strOut;
+  /*
   for (int i = 159; i > 0; i--)
   {
     UINT startTime = GetTickCount();
@@ -325,10 +327,18 @@ void Game::startGame()
     DeleteObject(replacedStatic);
     DeleteObject(hfont);
   }
+  */
   SelectObject(staticLayerDc_, oldfont);
   DeleteObject(hfont);
   resume();
   startTime_ = GetTickCount();
+  //some test
+  pause();
+  BitBlt(hdc_, 0, 0, 1000, 1000, hdc_, 0, 0, BLACKNESS);
+
+  gdi::Bitmap bitmap(1000, 1000);
+  bitmap.canvas.draw(buffer_);
+  BitBlt(hdc_, 0, 0, 1000, 1000, bitmap.canvas.getDC(), 0, 0, SRCCOPY);
 }
 
 void Game::stopGame()

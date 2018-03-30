@@ -12,18 +12,23 @@ extern const COLORREF COLOR_BLACK;
 namespace gdi
 {
   class Bitmap;
+  class Pen;
+  class Brush;
+  class Font;
   //
   class Canvas
   {
   public:
-    Canvas();
-    Canvas(HDC hdc);
+    Canvas(HDC hdc = NULL);
     ~Canvas();
-    bool draw(const Bitmap& bitmap, const int x, const int y)const;
-    bool draw(const Bitmap& bitmap, const int x, const int y, const int width, const int height)const;
-    bool draw(const HBITMAP hBitmap, const int x, const int y)const;
+    bool drawTo(const HDC hdc, const int x = 0, const int y = 0)const;
+    bool drawTo(const HBITMAP hBitmap, const int x = 0, const int y = 0)const;
+
+    //bool draw(const Bitmap& bitmap, const int x, const int y)const;
+    bool draw(const Bitmap& bitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0)const;
+    //bool draw(const HBITMAP hBitmap, const int x, const int y)const;
     bool draw(const HBITMAP hBitmap, const POINT point)const;
-    bool draw(const HBITMAP hBitmap, const int x, const int y, const int width, const int height)const;
+    bool draw(const HBITMAP hBitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0)const;
     bool draw(const HBITMAP hBitmap, const RECT rect)const;
     bool rotate(const HBITMAP hBitmap, const int degres, bool AdjustSize = false)const;
     bool rotate(const Bitmap& bitmap, const int degres, bool AdjustSize = false)const;
@@ -86,13 +91,16 @@ namespace gdi
     //SRCCOPY, SRCPAINT, SRCAND, SRCINVERT, SRCERASE, NOTSRCCOPY, NOTSRCERASE, 
     //MERGECOPY, MERGEPAINT, PATCOPY, PATPAINT, PATINVERT, 
     //DSTINVERT, BLACKNESS, WHITENESS
-    DWORD copyMode = SRCCOPY;
+    void setCopyMode(DWORD copyMode);
+    void setBitmap(HBITMAP bitmap);
+    void reset();
   protected:
   private:
     HDC hdc_ = nullptr;
-    LOGPEN pen_;
     int bkMode_ = TRANSPARENT;
+    DWORD copyMode_ = SRCCOPY;
     WORD penMode_ = R2_COPYPEN;
+    LOGPEN pen_;
     HPEN hPen_ = nullptr;
     LOGBRUSH brush_;
     HBRUSH hBrush_ = nullptr;
@@ -102,7 +110,19 @@ namespace gdi
     HGDIOBJ tempPen_ = nullptr;
     HGDIOBJ tempBrush_ = nullptr;
     HGDIOBJ tempFont_ = nullptr;
+    HGDIOBJ tempBitmap_ = nullptr;
     COLORREF bkColor_ = 0;
+  };
+
+  class Pallete
+  {
+  public:
+    Pallete();
+    Pallete(HPALETTE palette);
+  private:
+    LOGPALETTE paletteInfo_;
+    PALETTEENTRY arPalEntries[255];
+    HPALETTE palette_ = nullptr;
   };
 
   //Image based class prepared for draw
@@ -111,21 +131,22 @@ namespace gdi
   public:
     Bitmap(WORD width, WORD height);
     Bitmap(HDC hdc, WORD width, WORD height);
-    Bitmap(HBITMAP hBitmap);
-    void initialization(HBITMAP hBitmap);
-
+    void setSize(WORD width, WORD height);
     ~Bitmap();
     Canvas canvas;
     HBITMAP getHandle() const;
-    WORD getWidth() const;
-    WORD getHeight() const;
-    WORD GetBitsPerPixel() const;
+    LONG getWidth() const;
+    LONG getHeight() const;
+    WORD getBitsPerPixel() const;
   private:
-    HBITMAP handle_ = nullptr;
-    HBITMAP dibHandle_ = nullptr;
+    void initialization();
+    //
+    HBITMAP hBitmap_ = nullptr;
+    HBITMAP oldhBitmap_ = nullptr;
+    BITMAP bitmap_;
+    BITMAPINFO bitmapInfo_;
     DIBSECTION dib_;
-    HPALETTE palette_ = nullptr;
-    
+    BYTE* bitData_;
   };
 
   class Sprite : public Bitmap
