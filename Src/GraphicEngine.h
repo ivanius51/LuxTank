@@ -17,8 +17,11 @@ namespace gdi
   class Pen
   {
   public:
-    Pen(HDC hdc, const COLORREF color = COLOR_WHITE, const UINT width = 1, const UINT style = PS_SOLID);
+    Pen(HDC hdc = NULL, const COLORREF color = COLOR_WHITE, const UINT width = 1, const UINT style = PS_SOLID);
     ~Pen();
+
+    HPEN getHandle()const;
+
     //psSolid, psDash, psDot, psDashDot, psDashDotDot, psClear, psInsideFrame, psUserStyle, psAlternate 
     UINT getPenStyle()const;
     UINT getPenWidth()const;
@@ -36,6 +39,8 @@ namespace gdi
     void setPenColor(const COLORREF color);
     void setPenWidth(const UINT width = 1);
 
+    bool setHDC(HDC hdc);
+    
     bool free();
     bool reset();
   private:
@@ -47,8 +52,11 @@ namespace gdi
   class Brush
   {
   public:
-    Brush(HDC hdc, const COLORREF color = COLOR_BLACK, const UINT style = BS_SOLID, const ULONG_PTR hatch = HS_HORIZONTAL);
+    Brush(HDC hdc = NULL, const COLORREF color = COLOR_BLACK, const UINT style = BS_SOLID, const ULONG_PTR hatch = HS_HORIZONTAL);
     ~Brush();
+
+    HBRUSH getHandle()const;
+
     COLORREF getBrushColor()const;
     LOGBRUSH getBrush()const;
     //BS_SOLID, BS_NULL, BS_HOLLOW, BS_HATCHED, BS_PATTERN, BS_PATTERN8X8, BS_DIBPATTERN, BS_DIBPATTERN8X8, BS_DIBPATTERNPT 
@@ -67,7 +75,13 @@ namespace gdi
 
     bool free();
     bool reset();
+    bool setHDC(HDC hdc);
+    
+    const COLORREF* color;
+    const UINT* style;
+    const ULONG_PTR* hatch;
   private:
+    void update();
     HDC hdc_ = nullptr;
     LOGBRUSH brush_ = {0};
     HBRUSH hBrush_ = nullptr;
@@ -76,8 +90,10 @@ namespace gdi
   class Font
   {
   public:
-    Font(HDC hdc);
+    Font(HDC hdc = NULL);
     ~Font();
+
+    HFONT getHandle()const;
 
     SIZE getTextSize(const std::string text)const;
     LOGFONT getFont()const;
@@ -101,6 +117,7 @@ namespace gdi
 
     bool free();
     bool reset();
+    bool setHDC(HDC hdc);
   private:
     HDC hdc_ = nullptr;
     LOGFONT font_;
@@ -187,7 +204,7 @@ namespace gdi
   class Bitmap
   {
   public:
-    Bitmap(WORD width = 0, WORD height = 0, WORD bitCount = 16);
+    Bitmap(WORD width = 0, WORD height = 0, WORD bitCount = 24);
     Bitmap(HDC hdc, WORD width, WORD height);
     ~Bitmap();
 
@@ -200,13 +217,14 @@ namespace gdi
     LONG getWidth() const;
     LONG getHeight() const;
     WORD getBitsPerPixel() const;
-  private:
-    bool initialization();
+
     void free();
+  private:
+    bool initialization();   
     //
     HBITMAP hBitmap_ = nullptr;
     HBITMAP oldhBitmap_ = nullptr;
-    BITMAP bitmap_ = { 0 };
+    //BITMAP bitmap_ = { 0 };
     BITMAPINFO bitmapInfo_ = { 0 };
     DIBSECTION dib_ = { 0 };
     VOID* bitData_;

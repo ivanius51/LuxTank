@@ -38,9 +38,12 @@ gdi::Canvas::Canvas(HDC hdc)
   */
   hdc_ = CreateCompatibleDC(0);
   assert(hdc_ != NULL);
-  setBrush();
-  setPen();
-  setFont(COLOR_WHITE);
+  pen.setHDC(hdc_);
+  brush.setHDC(hdc_);
+  font.setHDC(hdc_);
+  //setBrush();
+  //setPen();
+  //setFont(COLOR_WHITE);
   setPenMode();
   SetStretchBltMode(hdc_, HALFTONE);
 }
@@ -48,9 +51,9 @@ gdi::Canvas::Canvas(HDC hdc)
 gdi::Canvas::~Canvas()
 {
   reset();
-  DeleteObject(hPen_);
-  DeleteObject(hFont_);
-  DeleteObject(hBrush_);
+  //DeleteObject(hPen_);
+  //DeleteObject(hFont_);
+  //DeleteObject(hBrush_);
   if (hdc_)
     DeleteDC(hdc_);
 }
@@ -99,14 +102,14 @@ void gdi::Canvas::setTransparent(const bool transparent)
     return;
   if (transparent)
   {
-    if (brush_.lbStyle == BS_SOLID)
+    if (*brush.style == BS_SOLID)
     {
-      setBkColor(brush_.lbColor);
+      setBkColor(*brush.color);
       setBkMode(OPAQUE);
     }
     else
     {
-      setBkColor(!brush_.lbColor);
+      setBkColor(!*brush.color);
       setBkMode(TRANSPARENT);
     }
   }
@@ -151,12 +154,14 @@ void gdi::Canvas::setBitmap(HBITMAP bitmap, bool deleteOldObject)
 }
 void gdi::Canvas::reset()
 {
+  /*
   if (tempPen_)
     SelectObject(hdc_, tempPen_);
   if (tempBrush_)
     SelectObject(hdc_, tempBrush_);
   if (tempFont_)
     SelectObject(hdc_, tempFont_);
+  t*/
   deselectBitmap();
 }
 void gdi::Canvas::deselectBitmap()
@@ -347,7 +352,7 @@ bool gdi::Canvas::fillRect(const int x, const int y, const int width, const int 
   if (!hdc_)
     return false;
   RECT rect = { x, y, x + width, y + height };
-  FillRect(hdc_, &rect, hBrush_);
+  FillRect(hdc_, &rect, brush.getHandle());
   return true;
 }
 
@@ -407,6 +412,9 @@ gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   HDC screenDC = GetDC(NULL);
   assert(screenDC != NULL);
   HDC newDC = CreateCompatibleDC(screenDC);
+  assert(newDC != NULL);
+  hBitmap_ = CreateCompatibleBitmap(screenDC, width, height);
+  /*
   //bitmapInfo_ = (BITMAPINFO) malloc(sizeof(BITMAPINFO) + 256 * sizeof(RGBQUAD));
   bitmapInfo_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
   bitmapInfo_.bmiHeader.biWidth = width;
@@ -437,11 +445,6 @@ gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   }   
   //dib_.dsBmih = bitmapInfo_.bmiHeader;
   hBitmap_ = CreateDIBSection(screenDC, &bitmapInfo_, DIB_RGB_COLORS, &bitData_, NULL, 0);
-  /*
-  HDC targetDC = GetDC(NULL);
-  assert(targetDC != NULL);
-  hBitmap_ = CreateCompatibleBitmap(targetDC, width, height);
-  ReleaseDC(NULL, targetDC);
   */
   if (hBitmap_)
   {
@@ -467,7 +470,7 @@ bool gdi::Bitmap::loadFromFile(std::string path)
 {
   bool result = false;
   free();
-  hBitmap_ = (HBITMAP)LoadImageA(NULL, path.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);// 
+  hBitmap_ = (HBITMAP)LoadImage(NULL, path.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);// 
   result = initialization();
   return result;
 }
@@ -526,13 +529,23 @@ bool gdi::Bitmap::saveToFile(std::string path)
 
 void gdi::Bitmap::setSize(WORD width, WORD height)
 {
+  if (width == 0 || height == 0)
+    return;
+  dib_ = { 0 };
+  if (hBitmap_)
+    GetObject(hBitmap_, sizeof(DIBSECTION), &dib_.dsBm);
+  /*
   if (width!=dib_.dsBm.bmWidth || height != dib_.dsBm.bmHeight)
   {
     DIBSECTION dib = dib_;
     dib.dsBm.bmWidth = width;
     dib.dsBm.bmHeight = height;
     dib.dsBmih.biWidth = width;
-    dib.dsBmih.biHeight = height;
+    dib.dsBmih.biHeight = height; 
+  }
+  */
+  if (width != dib_.dsBm.bmWidth || height != dib_.dsBm.bmHeight)
+  {
     hBitmap_ = (HBITMAP)CopyImage(hBitmap_, IMAGE_BITMAP, width, height, LR_COPYDELETEORG | LR_CREATEDIBSECTION);// 
     initialization();
   }
@@ -550,17 +563,17 @@ HBITMAP gdi::Bitmap::getHandle() const
 
 LONG gdi::Bitmap::getWidth() const
 {
-  return bitmap_.bmWidth? bitmap_.bmWidth : dib_.dsBm.bmWidth;
+  return dib_.dsBm.bmWidth? dib_.dsBm.bmWidth : dib_.dsBmih.biWidth;
 }
 
 LONG gdi::Bitmap::getHeight() const
 {
-  return bitmap_.bmHeight ? bitmap_.bmHeight : dib_.dsBm.bmHeight;
+  return dib_.dsBm.bmHeight ? dib_.dsBm.bmHeight : dib_.dsBmih.biHeight;
 }
 
 WORD gdi::Bitmap::getBitsPerPixel() const
 {
-  return bitmap_.bmBitsPixel? bitmap_.bmBitsPixel : dib_.dsBm.bmBitsPixel;
+  return dib_.dsBm.bmBitsPixel? dib_.dsBm.bmBitsPixel : dib_.dsBmih.biBitCount;
 }
 
 bool gdi::Bitmap::initialization()
@@ -601,7 +614,10 @@ bool gdi::Bitmap::initialization()
 void gdi::Bitmap::free()
 {
   if (hBitmap_)
+  {
     DeleteObject(hBitmap_);
+    hBitmap_ = nullptr;
+  }
   //if (palette_)
   //  DeleteObject(palette_);
   //if (dibHandle_)
@@ -686,6 +702,17 @@ void gdi::Pen::setPenWidth(const UINT width)
   pen_.lopnWidth.x = width;
   setPen(pen_);
 }
+bool gdi::Pen::setHDC(HDC hdc)
+{
+  if (hdc && !hdc_)
+  {
+    hdc_ = hdc;
+    if (!hPen_)
+      setPen();
+    return true;
+  }
+  return false;
+}
 bool gdi::Pen::free()
 {
   if (hPen_)
@@ -712,7 +739,7 @@ LOGPEN gdi::Pen::getPen()const
 }
 gdi::Pen::Pen(HDC hdc, const COLORREF color, const UINT width, const UINT style)
 {
-  assert(hdc != NULL);
+  //assert(hdc != NULL);
   hdc_ = hdc;
   setPen(color, style, width);
 }
@@ -720,6 +747,10 @@ gdi::Pen::~Pen()
 {
   reset();
   free();
+}
+HPEN gdi::Pen::getHandle()const
+{
+  return hPen_;
 }
 UINT gdi::Pen::getPenStyle()const
 {
@@ -737,14 +768,19 @@ COLORREF gdi::Pen::getPenColor()const
 
 gdi::Brush::Brush(HDC hdc, const COLORREF color, const UINT style, const ULONG_PTR hatch)
 {
-  assert(hdc != NULL);
+  //assert(hdc != NULL);
   hdc_ = hdc;
   setBrush(color, style, hatch);
+  update();
 }
 gdi::Brush::~Brush()
 {
   reset();
   free();
+}
+HBRUSH gdi::Brush::getHandle()const
+{
+  return hBrush_;
 }
 bool gdi::Brush::free()
 {
@@ -765,6 +801,25 @@ bool gdi::Brush::reset()
     return result;
   }
   return false;
+}
+
+bool gdi::Brush::setHDC(HDC hdc)
+{
+  if (hdc && !hdc_)
+  {
+    hdc_ = hdc;
+    if (!hBrush_)
+      setBrush();
+    return true;
+  }
+  return false;
+}
+
+void gdi::Brush::update()
+{
+  color = &brush_.lbColor;
+  style = &brush_.lbStyle;
+  hatch = &brush_.lbHatch;
 }
 
 LOGBRUSH gdi::Brush::getBrush()const
@@ -795,13 +850,13 @@ void gdi::Brush::setBrush(LOGBRUSH brush, bool deleteOldObject)
     return;
   if (brush.lbStyle == BS_SOLID)
   {
-    setBkColor(brush.lbColor);
-    setBkMode(OPAQUE);
+    SetBkColor(hdc_,brush.lbColor);
+    SetBkMode(hdc_, OPAQUE);
   }
   else
   {
-    setBkColor(!brush.lbColor);
-    setBkMode(TRANSPARENT);
+    SetBkColor(hdc_, !brush.lbColor);
+    SetBkMode(hdc_, TRANSPARENT);
   }
   HBRUSH newhBrush = CreateBrushIndirect(&brush);
   tempBrush_ = SelectObject(hdc_, newhBrush);
@@ -862,9 +917,21 @@ bool gdi::Font::reset()
   return false;
 }
 
+bool gdi::Font::setHDC(HDC hdc)
+{
+  if (hdc && !hdc_)
+  {
+    hdc_ = hdc;
+    if (!hFont_)
+      setFont(fontColor_);
+    return true;
+  }
+  return false;
+}
+
 gdi::Font::Font(HDC hdc)
 {
-  assert(hdc != NULL);
+  //assert(hdc != NULL);
   hdc_ = hdc;
 }
 
@@ -872,6 +939,11 @@ gdi::Font::~Font()
 {
   reset();
   free();
+}
+
+HFONT gdi::Font::getHandle()const
+{
+  return hFont_;
 }
 
 SIZE gdi::Font::getTextSize(const std::string text)const
