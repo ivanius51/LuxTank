@@ -75,290 +75,14 @@ WORD gdi::Canvas::getPenMode()const
   return penMode_;
 }
 
-LOGPEN gdi::Canvas::getPen()const
-{
-  return pen_;
-}
-
 HBITMAP gdi::Canvas::getBitmap() const
 {
   return hBitmap_;
 }
 
-LOGBRUSH gdi::Canvas::getBrush()const
-{
-  return brush_;
-}
-
-UINT gdi::Canvas::setBrushStyle()const
-{
-  return brush_.lbStyle;
-}
-
-UINT gdi::Canvas::setPenStyle()const
-{
-  return pen_.lopnStyle;
-}
-
-UINT gdi::Canvas::getPenWidth()const
-{
-  return pen_.lopnWidth.x;
-}
-
-LOGFONT gdi::Canvas::getFont()const
-{
-  return font_;
-}
-
-COLORREF gdi::Canvas::getFontColor()const
-{
-  return fontColor_;
-}
-
 COLORREF gdi::Canvas::getBkColor()const
 {
   return bkColor_;
-}
-
-COLORREF gdi::Canvas::getBrushColor()const
-{
-  return brush_.lbColor;
-}
-
-COLORREF gdi::Canvas::getPenColor()const
-{
-  return pen_.lopnColor;
-}
-
-void gdi::Canvas::setBrush(const COLORREF color, const UINT style, const ULONG_PTR hatch)
-{
-  if (!hdc_)
-    return;
-  brush_.lbStyle = style;
-  brush_.lbColor = color;
-  brush_.lbHatch = hatch;
-  setBrush(brush_);
-}
-
-void gdi::Canvas::setBrush(LOGBRUSH brush, bool deleteOldObject)
-{
-  if (!hdc_)
-    return;
-  if (brush.lbStyle == BS_SOLID)
-  {
-    setBkColor(brush.lbColor);
-    setBkMode(OPAQUE);
-  }
-  else
-  {
-    setBkColor(!brush.lbColor);
-    setBkMode(TRANSPARENT);
-  }
-  HBRUSH newhBrush = CreateBrushIndirect(&brush);
-  tempBrush_ = SelectObject(hdc_, newhBrush);
-  if (newhBrush && tempBrush_)
-  {
-    brush_ = brush;
-    if (deleteOldObject && hBrush_)
-      DeleteObject(hBrush_);
-    hBrush_ = newhBrush;
-  }
-}
-
-void gdi::Canvas::setBrush(HBRUSH brush, bool deleteOldObject)
-{
-  if (!hdc_)
-    return;
-  tempBrush_ = SelectObject(hdc_, brush);
-  if (tempBrush_)
-  {
-    if (deleteOldObject && hBrush_)
-      DeleteObject(hBrush_);
-    hBrush_ = brush;
-  }
-}
-
-void gdi::Canvas::setBrushStyle(const UINT style)
-{
-  if (!hdc_)
-    return;
-  brush_.lbStyle = style;
-  setBrush(brush_);
-}
-
-void gdi::Canvas::setBrushColor(const COLORREF color)
-{
-  if (!hdc_)
-    return;
-  brush_.lbColor = color;
-  setBrush(brush_);
-}
-
-void gdi::Canvas::setPen(const COLORREF color, const UINT style, const UINT width)
-{
-  if (!hdc_)
-    return;
-  pen_.lopnStyle = style;
-  pen_.lopnColor = color;
-  pen_.lopnWidth.x = width;
-  if (hPen_)
-    DeleteObject(hPen_);
-  hPen_ = CreatePenIndirect(&pen_);
-  tempPen_ = SelectObject(hdc_, hPen_);
-}
-
-void gdi::Canvas::setPen(LOGPEN pen, bool deleteOldObject)
-{
-  if (!hdc_)
-    return;
-  HPEN newhPen = CreatePenIndirect(&pen);
-  tempPen_ = SelectObject(hdc_, newhPen);
-  if (newhPen && tempPen_)
-  {
-    pen_ = pen;
-    if (deleteOldObject && hPen_)
-      DeleteObject(hPen_);
-    hPen_ = newhPen;
-  }
-}
-
-void gdi::Canvas::setPen(HPEN pen, bool deleteOldObject)
-{
-  if (!hdc_)
-    return;
-  tempPen_ = SelectObject(hdc_, pen);
-  if (tempPen_)
-  {
-    if (deleteOldObject && hPen_)
-      DeleteObject(hPen_);
-    hPen_ = pen;
-  }
-}
-
-void gdi::Canvas::setPenStyle(const UINT style)
-{
-  if (!hdc_)
-    return;
-  pen_.lopnStyle = style;
-  setPen(pen_);
-}
-
-void gdi::Canvas::setPenColor(const COLORREF color)
-{
-  if (!hdc_)
-    return;
-  pen_.lopnColor = color;
-  setPen(pen_);
-}
-
-void gdi::Canvas::setPenWidth(const UINT width)
-{
-  if (!hdc_)
-    return;
-  pen_.lopnWidth.x = width;
-  setPen(pen_);
-}
-
-void gdi::Canvas::setFont(LOGFONT font, bool deleteOldObject)
-{
-  if (!hdc_)
-    return;
-  
-  HFONT newhFont = CreateFontIndirect(&font);
-  tempFont_ = SelectObject(hdc_, newhFont);
-  if (newhFont && tempFont_)
-  {
-    font_ = font;
-    if (deleteOldObject && hFont_)
-      DeleteObject(hFont_);
-    hFont_ = newhFont;
-  }
-}
-
-void gdi::Canvas::setFont(HFONT font, bool deleteOldObject)
-{
-  if (!hdc_)
-    return;
-  tempFont_ = SelectObject(hdc_, font);
-  if (tempFont_)
-  {
-    if (deleteOldObject && hFont_)
-      DeleteObject(hFont_);
-    hFont_ = font;
-  }
-}
-
-void gdi::Canvas::setFont(const COLORREF color, const LONG height, const LONG weight, const bool italic, const bool underline, const BYTE quality, const LPCSTR fontName)
-{
-  if (!hdc_)
-    return;
-  setFontColor(color);
-  setFont(height, weight, italic, underline, quality, fontName);
-}
-
-void gdi::Canvas::setFont(const LONG height, const LONG weight, const bool italic, const bool underline, const BYTE quality, const LPCSTR fontName)
-{
-  if (!hdc_)
-    return;
-  font_.lfHeight = height;
-  font_.lfWidth = 0;
-  font_.lfEscapement = 0;
-  font_.lfOrientation = 0;
-  font_.lfWeight = weight;
-  font_.lfItalic = italic ? TRUE : FALSE;
-  font_.lfUnderline = underline ? TRUE : FALSE;
-  font_.lfStrikeOut = FALSE;
-  font_.lfCharSet = DEFAULT_CHARSET;
-  font_.lfOutPrecision = OUT_DEFAULT_PRECIS;
-  font_.lfClipPrecision = CLIP_DEFAULT_PRECIS;
-  font_.lfQuality = quality;
-  font_.lfPitchAndFamily = DEFAULT_PITCH;
-  strcpy_s(font_.lfFaceName, fontName);
-
-  hFont_ = CreateFont(height, 0, 0, 0, weight, font_.lfItalic, font_.lfUnderline, FALSE,
-    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, quality, DEFAULT_PITCH, fontName);
-}
-
-void gdi::Canvas::setFontColor(const COLORREF color)
-{
-  if (!hdc_)
-    return;
-  SetTextColor(hdc_, color);
-  fontColor_ = color;
-}
-
-void gdi::Canvas::setFontHeight(const LONG height)
-{
-  if (!hdc_)
-    return;
-  font_.lfHeight = height;
-  setFont(font_);
-}
-
-void gdi::Canvas::setFontName(const LPCSTR fontName)
-{
-  if (!hdc_)
-    return;
-  strcpy_s(font_.lfFaceName, fontName);
-  setFont(font_);
-}
-
-void gdi::Canvas::setFontStyle(const bool bold, const bool italic, const bool underline)
-{
-  if (!hdc_)
-    return;
-  font_.lfWeight = bold ? FW_BOLD : FW_NORMAL;
-  font_.lfItalic = italic ? TRUE : FALSE;
-  font_.lfUnderline = underline ? TRUE : FALSE;
-  setFont(font_);
-}
-
-void gdi::Canvas::setFontQuality(const BYTE quality)
-{
-  if (!hdc_)
-    return;
-  font_.lfQuality = quality;
-  setFont(font_);
 }
 
 void gdi::Canvas::setPenMode(WORD penMode)
@@ -649,6 +373,34 @@ SIZE gdi::Canvas::getTextSize(const std::string text)const
   return result;
 }
 
+HBITMAP getBitmap(BYTE* imageBuffer, int w, int h, HDC bitmapDC) {
+
+  BITMAPINFO* info;
+  info = (LPBITMAPINFO)malloc(sizeof(BITMAPINFO) + 256 * sizeof(RGBQUAD));
+  for (int i = 0; i < 255; i++)
+  {
+    info->bmiColors[i].rgbRed = (byte)i;
+    info->bmiColors[i].rgbGreen = (byte)i;
+    info->bmiColors[i].rgbBlue = (byte)i;
+    info->bmiColors[i].rgbReserved = 0;
+  }
+
+  info->bmiHeader.biSize = sizeof(info->bmiHeader);
+  info->bmiHeader.biWidth = w;
+  info->bmiHeader.biHeight = h;
+  info->bmiHeader.biPlanes = 1;
+  info->bmiHeader.biBitCount = 8;
+  info->bmiHeader.biCompression = BI_RGB;
+  info->bmiHeader.biSizeImage = 0;
+  info->bmiHeader.biClrUsed = 256;
+  info->bmiHeader.biClrImportant = 0;
+
+  HBITMAP bitmap = CreateCompatibleBitmap(bitmapDC, w, h);
+  SetDIBits(bitmapDC, bitmap, 0, h, imageBuffer, info, DIB_RGB_COLORS);
+  free(info);
+  return bitmap;
+}
+
 gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   :canvas(Canvas(GetDC(NULL)))
 {
@@ -874,4 +626,370 @@ gdi::Pallete::Pallete(HPALETTE palette)
     GetPaletteEntries(palette, 0, paletteSize, paletteInfo_.palPalEntry);
     palette_ = CreatePalette(&paletteInfo_);
   }
+}
+
+void gdi::Pen::setPen(const COLORREF color, const UINT style, const UINT width)
+{
+  if (!hdc_)
+    return;
+  pen_.lopnStyle = style;
+  pen_.lopnColor = color;
+  pen_.lopnWidth.x = width;
+  free();
+  hPen_ = CreatePenIndirect(&pen_);
+  tempPen_ = SelectObject(hdc_, hPen_);
+}
+void gdi::Pen::setPen(LOGPEN pen, bool deleteOldObject)
+{
+  if (!hdc_)
+    return;
+  HPEN newhPen = CreatePenIndirect(&pen);
+  tempPen_ = SelectObject(hdc_, newhPen);
+  if (newhPen && tempPen_)
+  {
+    pen_ = pen;
+    if (deleteOldObject)
+      free();
+    hPen_ = newhPen;
+  }
+}
+void gdi::Pen::setPen(HPEN pen, bool deleteOldObject)
+{
+  if (!hdc_)
+    return;
+  tempPen_ = SelectObject(hdc_, pen);
+  if (tempPen_)
+  {
+    if (deleteOldObject)
+      free();
+    hPen_ = pen;
+  }
+}
+void gdi::Pen::setPenStyle(const UINT style)
+{
+  if (!hdc_)
+    return;
+  pen_.lopnStyle = style;
+  setPen(pen_);
+}
+void gdi::Pen::setPenColor(const COLORREF color)
+{
+  if (!hdc_)
+    return;
+  pen_.lopnColor = color;
+  setPen(pen_);
+}
+void gdi::Pen::setPenWidth(const UINT width)
+{
+  if (!hdc_)
+    return;
+  pen_.lopnWidth.x = width;
+  setPen(pen_);
+}
+bool gdi::Pen::free()
+{
+  if (hPen_)
+  {
+    bool result = DeleteObject(hPen_);
+    hPen_ = nullptr;
+    return result;
+  }
+  return false;
+}
+bool gdi::Pen::reset()
+{
+  if (tempPen_)
+  {
+    bool result = SelectObject(hdc_, tempPen_);
+    tempPen_ = nullptr;
+    return result;
+  }
+  return false;
+}
+LOGPEN gdi::Pen::getPen()const
+{
+  return pen_;
+}
+gdi::Pen::Pen(HDC hdc, const COLORREF color, const UINT width, const UINT style)
+{
+  assert(hdc != NULL);
+  hdc_ = hdc;
+  setPen(color, style, width);
+}
+gdi::Pen::~Pen()
+{
+  reset();
+  free();
+}
+UINT gdi::Pen::getPenStyle()const
+{
+  return pen_.lopnStyle;
+}
+UINT gdi::Pen::getPenWidth()const
+{
+  return pen_.lopnWidth.x;
+}
+COLORREF gdi::Pen::getPenColor()const
+{
+  return pen_.lopnColor;
+}
+
+
+gdi::Brush::Brush(HDC hdc, const COLORREF color, const UINT style, const ULONG_PTR hatch)
+{
+  assert(hdc != NULL);
+  hdc_ = hdc;
+  setBrush(color, style, hatch);
+}
+gdi::Brush::~Brush()
+{
+  reset();
+  free();
+}
+bool gdi::Brush::free()
+{
+  if (hBrush_)
+  {
+    bool result = DeleteObject(hBrush_);
+    hBrush_ = nullptr;
+    return result;
+  }
+  return false;
+}
+bool gdi::Brush::reset()
+{
+  if (tempBrush_)
+  {
+    bool result = SelectObject(hdc_, tempBrush_);
+    tempBrush_ = nullptr;
+    return result;
+  }
+  return false;
+}
+
+LOGBRUSH gdi::Brush::getBrush()const
+{
+  return brush_;
+}
+UINT gdi::Brush::getBrushStyle()const
+{
+  return brush_.lbStyle;
+}
+COLORREF gdi::Brush::getBrushColor()const
+{
+  return brush_.lbColor;
+}
+
+void gdi::Brush::setBrush(const COLORREF color, const UINT style, const ULONG_PTR hatch)
+{
+  if (!hdc_)
+    return;
+  brush_.lbStyle = style;
+  brush_.lbColor = color;
+  brush_.lbHatch = hatch;
+  setBrush(brush_);
+}
+void gdi::Brush::setBrush(LOGBRUSH brush, bool deleteOldObject)
+{
+  if (!hdc_)
+    return;
+  if (brush.lbStyle == BS_SOLID)
+  {
+    setBkColor(brush.lbColor);
+    setBkMode(OPAQUE);
+  }
+  else
+  {
+    setBkColor(!brush.lbColor);
+    setBkMode(TRANSPARENT);
+  }
+  HBRUSH newhBrush = CreateBrushIndirect(&brush);
+  tempBrush_ = SelectObject(hdc_, newhBrush);
+  if (newhBrush && tempBrush_)
+  {
+    brush_ = brush;
+    if (deleteOldObject)
+      free();
+    hBrush_ = newhBrush;
+  }
+}
+void gdi::Brush::setBrush(HBRUSH brush, bool deleteOldObject)
+{
+  if (!hdc_)
+    return;
+  tempBrush_ = SelectObject(hdc_, brush);
+  if (tempBrush_)
+  {
+    if (deleteOldObject)
+      free();
+    hBrush_ = brush;
+  }
+}
+void gdi::Brush::setBrushStyle(const UINT style)
+{
+  if (!hdc_)
+    return;
+  brush_.lbStyle = style;
+  setBrush(brush_);
+}
+void gdi::Brush::setBrushColor(const COLORREF color)
+{
+  if (!hdc_)
+    return;
+  brush_.lbColor = color;
+  setBrush(brush_);
+}
+
+bool gdi::Font::free()
+{
+  if (hFont_)
+  {
+    bool result = DeleteObject(hFont_);
+    hFont_ = nullptr;
+    return result;
+  }
+  return false;
+}
+
+bool gdi::Font::reset()
+{
+  if (tempFont_)
+  {
+    bool result = SelectObject(hdc_, tempFont_);
+    tempFont_ = nullptr;
+    return result;
+  }
+  return false;
+}
+
+gdi::Font::Font(HDC hdc)
+{
+  assert(hdc != NULL);
+  hdc_ = hdc;
+}
+
+gdi::Font::~Font()
+{
+  reset();
+  free();
+}
+
+SIZE gdi::Font::getTextSize(const std::string text)const
+{
+  SIZE result;
+  if (hdc_)
+    GetTextExtentPoint32(hdc_, text.c_str(), text.length(), &result);
+  return result;
+}
+
+LOGFONT gdi::Font::getFont()const
+{
+  return font_;
+}
+
+COLORREF gdi::Font::getFontColor()const
+{
+  return fontColor_;
+}
+
+void gdi::Font::setFont(LOGFONT font, bool deleteOldObject)
+{
+  if (!hdc_)
+    return;
+
+  HFONT newhFont = CreateFontIndirect(&font);
+  tempFont_ = SelectObject(hdc_, newhFont);
+  if (newhFont && tempFont_)
+  {
+    font_ = font;
+    if (deleteOldObject)
+      free();
+    hFont_ = newhFont;
+  }
+}
+
+void gdi::Font::setFont(HFONT font, bool deleteOldObject)
+{
+  if (!hdc_)
+    return;
+  tempFont_ = SelectObject(hdc_, font);
+  if (tempFont_)
+  {
+    if (deleteOldObject)
+      free();
+    hFont_ = font;
+  }
+}
+
+void gdi::Font::setFont(const COLORREF color, const LONG height, const LONG weight, const bool italic, const bool underline, const BYTE quality, const LPCSTR fontName)
+{
+  if (!hdc_)
+    return;
+  setFontColor(color);
+  setFont(height, weight, italic, underline, quality, fontName);
+}
+
+void gdi::Font::setFont(const LONG height, const LONG weight, const bool italic, const bool underline, const BYTE quality, const LPCSTR fontName)
+{
+  if (!hdc_)
+    return;
+  font_.lfHeight = height;
+  font_.lfWidth = 0;
+  font_.lfEscapement = 0;
+  font_.lfOrientation = 0;
+  font_.lfWeight = weight;
+  font_.lfItalic = italic ? TRUE : FALSE;
+  font_.lfUnderline = underline ? TRUE : FALSE;
+  font_.lfStrikeOut = FALSE;
+  font_.lfCharSet = DEFAULT_CHARSET;
+  font_.lfOutPrecision = OUT_DEFAULT_PRECIS;
+  font_.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+  font_.lfQuality = quality;
+  font_.lfPitchAndFamily = DEFAULT_PITCH;
+  strcpy_s(font_.lfFaceName, fontName);
+
+  hFont_ = CreateFont(height, 0, 0, 0, weight, font_.lfItalic, font_.lfUnderline, FALSE,
+    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, quality, DEFAULT_PITCH, fontName);
+}
+
+void gdi::Font::setFontColor(const COLORREF color)
+{
+  if (!hdc_)
+    return;
+  SetTextColor(hdc_, color);
+  fontColor_ = color;
+}
+
+void gdi::Font::setFontHeight(const LONG height)
+{
+  if (!hdc_)
+    return;
+  font_.lfHeight = height;
+  setFont(font_);
+}
+
+void gdi::Font::setFontName(const LPCSTR fontName)
+{
+  if (!hdc_)
+    return;
+  strcpy_s(font_.lfFaceName, fontName);
+  setFont(font_);
+}
+
+void gdi::Font::setFontStyle(const bool bold, const bool italic, const bool underline)
+{
+  if (!hdc_)
+    return;
+  font_.lfWeight = bold ? FW_BOLD : FW_NORMAL;
+  font_.lfItalic = italic ? TRUE : FALSE;
+  font_.lfUnderline = underline ? TRUE : FALSE;
+  setFont(font_);
+}
+
+void gdi::Font::setFontQuality(const BYTE quality)
+{
+  if (!hdc_)
+    return;
+  font_.lfQuality = quality;
+  setFont(font_);
 }
