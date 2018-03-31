@@ -150,7 +150,7 @@ void gdi::Canvas::setBitmap(HBITMAP bitmap, bool deleteOldObject)
       DeleteObject(hBitmap_);
     hBitmap_ = bitmap;
   }
-    
+
 }
 void gdi::Canvas::reset()
 {
@@ -170,7 +170,7 @@ void gdi::Canvas::deselectBitmap()
   {
     SelectObject(hdc_, tempBitmap_);
     tempBitmap_ = nullptr;
-  }    
+  }
 }
 /*
 bool gdi::Canvas::draw(const Bitmap& bitmap, const int x, const int y)const
@@ -409,12 +409,14 @@ HBITMAP getBitmap(BYTE* imageBuffer, int w, int h, HDC bitmapDC) {
 gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   :canvas(Canvas(GetDC(NULL)))
 {
+  /*
   HDC screenDC = GetDC(NULL);
   assert(screenDC != NULL);
   HDC newDC = CreateCompatibleDC(screenDC);
   assert(newDC != NULL);
   hBitmap_ = CreateCompatibleBitmap(screenDC, width, height);
-  /*
+  */
+
   //bitmapInfo_ = (BITMAPINFO) malloc(sizeof(BITMAPINFO) + 256 * sizeof(RGBQUAD));
   bitmapInfo_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
   bitmapInfo_.bmiHeader.biWidth = width;
@@ -423,13 +425,14 @@ gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   bitmapInfo_.bmiHeader.biBitCount = bitCount;
   bitmapInfo_.bmiHeader.biCompression = BI_RGB;
   bitmapInfo_.bmiHeader.biSizeImage = -1 * bitmapInfo_.bmiHeader.biHeight * bitmapInfo_.bmiHeader.biWidth * (bitCount >> 3);
-  if (bitmapInfo_.bmiHeader.biBitCount < 16)
-    bitmapInfo_.bmiHeader.biClrUsed = (1 << bitmapInfo_.bmiHeader.biBitCount);
-  else
-    bitmapInfo_.bmiHeader.biClrUsed = 0;
+  bitmapInfo_.bmiHeader.biClrUsed = 0;
   bitmapInfo_.bmiHeader.biClrImportant = 0;
-  if (bitCount == 16)
+  if (bitCount <= 16)
   {
+    if (bitCount < 15)
+    {
+      bitmapInfo_.bmiHeader.biClrUsed = (1 << bitmapInfo_.bmiHeader.biBitCount);
+    }
     bitmapInfo_.bmiHeader.biCompression = BI_BITFIELDS;
     dib_.dsBitfields[0] = 0xF800;
     dib_.dsBitfields[1] = 0x07E0;
@@ -442,10 +445,13 @@ gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
     bitmapInfo_.bmiColors[0].rgbGreen = dib_.dsBitfields[1];
     bitmapInfo_.bmiColors[0].rgbRed = dib_.dsBitfields[2];
     bitmapInfo_.bmiColors[0].rgbReserved = 0x00;
-  }   
+    hBitmap_ = CreateDIBSection(NULL, &bitmapInfo_, DIB_RGB_COLORS, &bitData_, NULL, 0);
+  }
+  else
+    hBitmap_ = CreateDIBSection(NULL, &bitmapInfo_, DIB_RGB_COLORS, &bitData_, NULL, 0);
   //dib_.dsBmih = bitmapInfo_.bmiHeader;
-  hBitmap_ = CreateDIBSection(screenDC, &bitmapInfo_, DIB_RGB_COLORS, &bitData_, NULL, 0);
-  */
+  
+  /*
   if (hBitmap_)
   {
     HGDIOBJ replaced = SelectObject(newDC, hBitmap_);
@@ -454,6 +460,7 @@ gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   }
   DeleteDC(newDC);
   ReleaseDC(0, screenDC);
+  */
   assert(hBitmap_ != NULL);
   initialization();
 }
@@ -478,20 +485,25 @@ bool gdi::Bitmap::loadFromFile(std::string path)
 bool gdi::Bitmap::saveToFile(std::string path)
 {
   HANDLE hFile;
-  BITMAPFILEHEADER hdr;
-  PBITMAPINFOHEADER pbih;
+  BITMAPFILEHEADER bitmapHeader;
   LPBYTE lpBits;
   DWORD dwTemp;
 
-  pbih = &bitmapInfo_.bmiHeader;
-  lpBits = (LPBYTE)GlobalAlloc(GMEM_FIXED, pbih->biSizeImage);
+  lpBits = (LPBYTE)GlobalAlloc(GMEM_FIXED, bitmapInfo_.bmiHeader.biSizeImage);
 
   if (!lpBits)
   {
     return false; // could not allocate bitmap
   }
 
-  if (!GetDIBits(canvas.getDC(), hBitmap_, 0, pbih->biHeight, lpBits, &bitmapInfo_, DIB_RGB_COLORS))
+  bitmapInfo_ = { 0 };
+  bitmapInfo_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+  if (!GetDIBits(canvas.getDC(), hBitmap_, 0, 0, NULL, (BITMAPINFO*)&bitmapInfo_, DIB_RGB_COLORS))
+  {
+    return false; // could not allocate bitmap
+  }
+
+  if (!GetDIBits(canvas.getDC(), hBitmap_, 0, bitmapInfo_.bmiHeader.biHeight, lpBits, &bitmapInfo_, DIB_RGB_COLORS))
   {
     return false; // could not allocate bitmap
   }
@@ -505,22 +517,22 @@ bool gdi::Bitmap::saveToFile(std::string path)
   }
 
   // type == BM
-  hdr.bfType = 0x4d42;
+  bitmapHeader.bfType = 0x4d42;
 
-  hdr.bfSize = (sizeof(BITMAPFILEHEADER) + pbih->biSize + pbih->biClrUsed * sizeof(RGBQUAD) + pbih->biSizeImage);
-  hdr.bfReserved1 = 0;
-  hdr.bfReserved2 = 0;
+  bitmapHeader.bfSize = (sizeof(BITMAPFILEHEADER) + bitmapInfo_.bmiHeader.biSize + bitmapInfo_.bmiHeader.biClrUsed * sizeof(RGBQUAD) + bitmapInfo_.bmiHeader.biSizeImage);
+  bitmapHeader.bfReserved1 = 0;
+  bitmapHeader.bfReserved2 = 0;
 
-  hdr.bfOffBits = sizeof(BITMAPFILEHEADER) + pbih->biSize + pbih->biClrUsed * sizeof(RGBQUAD);
+  bitmapHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + bitmapInfo_.bmiHeader.biSize + bitmapInfo_.bmiHeader.biClrUsed * sizeof(RGBQUAD);
 
   // write the bitmap file header to file
-  WriteFile(hFile, (LPVOID)&hdr, sizeof(BITMAPFILEHEADER), &dwTemp, NULL);
+  WriteFile(hFile, (LPVOID)&bitmapHeader, sizeof(BITMAPFILEHEADER), &dwTemp, NULL);
 
   // write the bitmap header to file
-  WriteFile(hFile, (LPVOID)pbih, sizeof(BITMAPINFOHEADER) + pbih->biClrUsed * sizeof(RGBQUAD), &dwTemp, NULL);
+  WriteFile(hFile, (LPVOID)&bitmapInfo_.bmiHeader, sizeof(BITMAPINFOHEADER) + bitmapInfo_.bmiHeader.biClrUsed * sizeof(RGBQUAD), &dwTemp, NULL);
 
   // copy the bitmap colour data into the file
-  WriteFile(hFile, (LPSTR)lpBits, pbih->biSizeImage, &dwTemp, NULL);
+  WriteFile(hFile, (LPSTR)lpBits, bitmapInfo_.bmiHeader.biSizeImage, &dwTemp, NULL);
 
   CloseHandle(hFile);
 
@@ -541,7 +553,7 @@ void gdi::Bitmap::setSize(WORD width, WORD height)
     dib.dsBm.bmWidth = width;
     dib.dsBm.bmHeight = height;
     dib.dsBmih.biWidth = width;
-    dib.dsBmih.biHeight = height; 
+    dib.dsBmih.biHeight = height;
   }
   */
   if (width != dib_.dsBm.bmWidth || height != dib_.dsBm.bmHeight)
@@ -563,7 +575,7 @@ HBITMAP gdi::Bitmap::getHandle() const
 
 LONG gdi::Bitmap::getWidth() const
 {
-  return dib_.dsBm.bmWidth? dib_.dsBm.bmWidth : dib_.dsBmih.biWidth;
+  return dib_.dsBm.bmWidth ? dib_.dsBm.bmWidth : dib_.dsBmih.biWidth;
 }
 
 LONG gdi::Bitmap::getHeight() const
@@ -573,7 +585,7 @@ LONG gdi::Bitmap::getHeight() const
 
 WORD gdi::Bitmap::getBitsPerPixel() const
 {
-  return dib_.dsBm.bmBitsPixel? dib_.dsBm.bmBitsPixel : dib_.dsBmih.biBitCount;
+  return dib_.dsBm.bmBitsPixel ? dib_.dsBm.bmBitsPixel : dib_.dsBmih.biBitCount;
 }
 
 bool gdi::Bitmap::initialization()
@@ -586,7 +598,7 @@ bool gdi::Bitmap::initialization()
   */
   //ZeroMemory(&dib_, sizeof(DIBSECTION));
   dib_ = { 0 };
-  GetObject(hBitmap_, sizeof(DIBSECTION), &dib_.dsBm);
+  result = GetObject(hBitmap_, sizeof(DIBSECTION), &dib_.dsBm);
   /*
   dib_.dsBmih.biSize = sizeof(BITMAPINFOHEADER);
   dib_.dsBmih.biWidth = dib_.dsBm.bmWidth;
@@ -594,9 +606,7 @@ bool gdi::Bitmap::initialization()
   dib_.dsBmih.biPlanes = 1;
   dib_.dsBmih.biBitCount = dib_.dsBm.bmPlanes * dib_.dsBm.bmBitsPixel;
   //*/
-  /*
   bitmapInfo_ = { 0 };
-  //ZeroMemory(&bitmapInfo_, sizeof(BITMAPINFOHEADER));
   bitmapInfo_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
   GetDIBits(canvas.getDC(), hBitmap_, 0, 0, NULL, (BITMAPINFO*)&bitmapInfo_, DIB_RGB_COLORS);
   /*
@@ -607,7 +617,6 @@ bool gdi::Bitmap::initialization()
   */
   if (canvas.getBitmap() != hBitmap_)
     canvas.setBitmap(hBitmap_);
-  result = true;
   return result;
 }
 
@@ -850,7 +859,7 @@ void gdi::Brush::setBrush(LOGBRUSH brush, bool deleteOldObject)
     return;
   if (brush.lbStyle == BS_SOLID)
   {
-    SetBkColor(hdc_,brush.lbColor);
+    SetBkColor(hdc_, brush.lbColor);
     SetBkMode(hdc_, OPAQUE);
   }
   else

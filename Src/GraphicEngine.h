@@ -204,7 +204,7 @@ namespace gdi
   class Bitmap
   {
   public:
-    Bitmap(WORD width = 0, WORD height = 0, WORD bitCount = 24);
+    Bitmap(WORD width = 0, WORD height = 0, WORD bitCount = 15);
     Bitmap(HDC hdc, WORD width, WORD height);
     ~Bitmap();
 
