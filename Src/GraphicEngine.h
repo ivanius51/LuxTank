@@ -46,6 +46,7 @@ namespace gdi
     SIZE getTextSize(const std::string text)const;
     WORD getPenMode()const;
     LOGPEN getPen()const;
+    HBITMAP getBitmap()const;
     LOGBRUSH getBrush()const;
     UINT setBrushStyle()const;
     UINT setPenStyle()const;
@@ -55,23 +56,31 @@ namespace gdi
     COLORREF getBkColor()const;
     COLORREF getBrushColor()const;
     COLORREF getPenColor()const;
+    void setBitmap(HBITMAP bitmap, bool deleteOldObject = true);
+    void setBrush(LOGBRUSH brush, bool deleteOldObject = true);
+    void setBrush(HBRUSH brush, bool deleteOldObject = true);
+    void setPen(LOGPEN pen, bool deleteOldObject = true);
+    void setPen(HPEN pen, bool deleteOldObject = true);
+    void setFont(LOGFONT font, bool deleteOldObject = true);
+    void setFont(HFONT font, bool deleteOldObject = true);
+    //Create new Brush with following parameters
     //BS_SOLID, BS_NULL, BS_HOLLOW, BS_HATCHED, BS_PATTERN, BS_PATTERN8X8, BS_DIBPATTERN, BS_DIBPATTERN8X8, BS_DIBPATTERNPT 
     //HS_HORIZONTAL, HS_VERTICAL, HS_FDIAGONAL, HS_BDIAGONAL, HS_CROSS, HS_DIAGCROSS
     void setBrush(const COLORREF color = COLOR_BLACK, const UINT style = BS_SOLID, const ULONG_PTR hatch = HS_HORIZONTAL);
-    void setBrush(LOGBRUSH brush);
     //BS_SOLID, BS_NULL, BS_HOLLOW, BS_HATCHED, BS_PATTERN, BS_PATTERN8X8, BS_DIBPATTERN, BS_DIBPATTERN8X8, BS_DIBPATTERNPT 
     void setBrushStyle(const UINT style = BS_SOLID);
     void setBrushColor(const COLORREF color);
+    //Create new Pen with following parameters
     //psSolid, psDash, psDot, psDashDot, psDashDotDot, psClear, psInsideFrame, psUserStyle, psAlternate 
     void setPen(const COLORREF color = COLOR_WHITE, const UINT style = PS_SOLID, const UINT width = 1);
-    void setPen(LOGPEN pen);
     //psSolid, psDash, psDot, psDashDot, psDashDotDot, psClear, psInsideFrame, psUserStyle, psAlternate 
     void setPenStyle(const UINT style = PS_SOLID);
     void setPenColor(const COLORREF color);
     void setPenWidth(const UINT width = 1);
-    void setFont(LOGFONT font);
+    //Create new Fone with following parameters
     void setFont(const COLORREF color, const LONG height = -11, const LONG weight = 400, const bool italic = false,
       const bool underline = false, const BYTE quality = DEFAULT_QUALITY, const LPCSTR fontName = "Tahoma");
+    //Create new Fone with following parameters
     void setFont(const LONG height = -11, const LONG weight = 400, const bool italic = false,
       const bool underline = false, const BYTE quality = DEFAULT_QUALITY, const LPCSTR fontName = "Tahoma");
     void setFontColor(const COLORREF color);
@@ -92,8 +101,8 @@ namespace gdi
     //MERGECOPY, MERGEPAINT, PATCOPY, PATPAINT, PATINVERT, 
     //DSTINVERT, BLACKNESS, WHITENESS
     void setCopyMode(DWORD copyMode);
-    void setBitmap(HBITMAP bitmap);
     void reset();
+    void deselectBitmap();
   protected:
   private:
     HDC hdc_ = nullptr;
@@ -107,6 +116,7 @@ namespace gdi
     LOGFONT font_;
     HFONT hFont_ = nullptr;
     COLORREF fontColor_ = COLOR_WHITE;
+    HBITMAP hBitmap_ = nullptr;
     HGDIOBJ tempPen_ = nullptr;
     HGDIOBJ tempBrush_ = nullptr;
     HGDIOBJ tempFont_ = nullptr;
@@ -129,8 +139,10 @@ namespace gdi
   class Bitmap
   {
   public:
-    Bitmap(WORD width, WORD height);
+    Bitmap(WORD width = 0, WORD height =0, WORD bitCount = 16);
     Bitmap(HDC hdc, WORD width, WORD height);
+    bool loadFromFile(std::string path);
+    bool saveToFile(std::string path);
     void setSize(WORD width, WORD height);
     ~Bitmap();
     Canvas canvas;
@@ -139,14 +151,15 @@ namespace gdi
     LONG getHeight() const;
     WORD getBitsPerPixel() const;
   private:
-    void initialization();
+    bool initialization();
+    void free();
     //
     HBITMAP hBitmap_ = nullptr;
     HBITMAP oldhBitmap_ = nullptr;
-    BITMAP bitmap_;
-    BITMAPINFO bitmapInfo_;
-    DIBSECTION dib_;
-    BYTE* bitData_;
+    BITMAP bitmap_ = { 0 };
+    BITMAPINFO bitmapInfo_ = { 0 };
+    DIBSECTION dib_ = { 0 };
+    VOID* bitData_;
   };
 
   class Sprite : public Bitmap

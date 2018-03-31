@@ -25,6 +25,7 @@ gdi::GraphicEngine::~GraphicEngine()
 
 gdi::Canvas::Canvas(HDC hdc)
 {
+  /*
   HDC targetDC = hdc;
   if (targetDC == NULL)
   {
@@ -34,6 +35,8 @@ gdi::Canvas::Canvas(HDC hdc)
   }
   else
     hdc_ = CreateCompatibleDC(targetDC);
+  */
+  hdc_ = CreateCompatibleDC(0);
   assert(hdc_ != NULL);
   setBrush();
   setPen();
@@ -75,6 +78,11 @@ WORD gdi::Canvas::getPenMode()const
 LOGPEN gdi::Canvas::getPen()const
 {
   return pen_;
+}
+
+HBITMAP gdi::Canvas::getBitmap() const
+{
+  return hBitmap_;
 }
 
 LOGBRUSH gdi::Canvas::getBrush()const
@@ -132,7 +140,7 @@ void gdi::Canvas::setBrush(const COLORREF color, const UINT style, const ULONG_P
   setBrush(brush_);
 }
 
-void gdi::Canvas::setBrush(LOGBRUSH brush)
+void gdi::Canvas::setBrush(LOGBRUSH brush, bool deleteOldObject)
 {
   if (!hdc_)
     return;
@@ -146,11 +154,28 @@ void gdi::Canvas::setBrush(LOGBRUSH brush)
     setBkColor(!brush.lbColor);
     setBkMode(TRANSPARENT);
   }
-  brush_ = brush;
-  if (hBrush_)
-    DeleteObject(hBrush_);
-  hBrush_ = CreateBrushIndirect(&brush_);
-  tempBrush_ = SelectObject(hdc_, hBrush_);
+  HBRUSH newhBrush = CreateBrushIndirect(&brush);
+  tempBrush_ = SelectObject(hdc_, newhBrush);
+  if (newhBrush && tempBrush_)
+  {
+    brush_ = brush;
+    if (deleteOldObject && hBrush_)
+      DeleteObject(hBrush_);
+    hBrush_ = newhBrush;
+  }
+}
+
+void gdi::Canvas::setBrush(HBRUSH brush, bool deleteOldObject)
+{
+  if (!hdc_)
+    return;
+  tempBrush_ = SelectObject(hdc_, brush);
+  if (tempBrush_)
+  {
+    if (deleteOldObject && hBrush_)
+      DeleteObject(hBrush_);
+    hBrush_ = brush;
+  }
 }
 
 void gdi::Canvas::setBrushStyle(const UINT style)
@@ -182,15 +207,32 @@ void gdi::Canvas::setPen(const COLORREF color, const UINT style, const UINT widt
   tempPen_ = SelectObject(hdc_, hPen_);
 }
 
-void gdi::Canvas::setPen(LOGPEN pen)
+void gdi::Canvas::setPen(LOGPEN pen, bool deleteOldObject)
 {
   if (!hdc_)
     return;
-  pen_ = pen;
-  if (hPen_)
-    DeleteObject(hPen_);
-  hPen_ = CreatePenIndirect(&pen_);
-  tempPen_ = SelectObject(hdc_, hPen_);
+  HPEN newhPen = CreatePenIndirect(&pen);
+  tempPen_ = SelectObject(hdc_, newhPen);
+  if (newhPen && tempPen_)
+  {
+    pen_ = pen;
+    if (deleteOldObject && hPen_)
+      DeleteObject(hPen_);
+    hPen_ = newhPen;
+  }
+}
+
+void gdi::Canvas::setPen(HPEN pen, bool deleteOldObject)
+{
+  if (!hdc_)
+    return;
+  tempPen_ = SelectObject(hdc_, pen);
+  if (tempPen_)
+  {
+    if (deleteOldObject && hPen_)
+      DeleteObject(hPen_);
+    hPen_ = pen;
+  }
 }
 
 void gdi::Canvas::setPenStyle(const UINT style)
@@ -217,15 +259,33 @@ void gdi::Canvas::setPenWidth(const UINT width)
   setPen(pen_);
 }
 
-void gdi::Canvas::setFont(LOGFONT font)
+void gdi::Canvas::setFont(LOGFONT font, bool deleteOldObject)
 {
   if (!hdc_)
     return;
-  font_ = font;
-  if (hFont_)
-    DeleteObject(hFont_);
-  hFont_ = CreateFontIndirect(&font_);
-  tempFont_ = SelectObject(hdc_, hFont_);
+  
+  HFONT newhFont = CreateFontIndirect(&font);
+  tempFont_ = SelectObject(hdc_, newhFont);
+  if (newhFont && tempFont_)
+  {
+    font_ = font;
+    if (deleteOldObject && hFont_)
+      DeleteObject(hFont_);
+    hFont_ = newhFont;
+  }
+}
+
+void gdi::Canvas::setFont(HFONT font, bool deleteOldObject)
+{
+  if (!hdc_)
+    return;
+  tempFont_ = SelectObject(hdc_, font);
+  if (tempFont_)
+  {
+    if (deleteOldObject && hFont_)
+      DeleteObject(hFont_);
+    hFont_ = font;
+  }
 }
 
 void gdi::Canvas::setFont(const COLORREF color, const LONG height, const LONG weight, const bool italic, const bool underline, const BYTE quality, const LPCSTR fontName)
@@ -352,11 +412,18 @@ void gdi::Canvas::setCopyMode(DWORD copyMode)
 {
   copyMode_ = copyMode;
 }
-void gdi::Canvas::setBitmap(HBITMAP bitmap)
+void gdi::Canvas::setBitmap(HBITMAP bitmap, bool deleteOldObject)
 {
   if (!hdc_)
     return;
   tempBitmap_ = SelectObject(hdc_, bitmap);
+  if (tempBitmap_)
+  {
+    if (deleteOldObject && hBitmap_)
+      DeleteObject(hBitmap_);
+    hBitmap_ = bitmap;
+  }
+    
 }
 void gdi::Canvas::reset()
 {
@@ -366,8 +433,15 @@ void gdi::Canvas::reset()
     SelectObject(hdc_, tempBrush_);
   if (tempFont_)
     SelectObject(hdc_, tempFont_);
+  deselectBitmap();
+}
+void gdi::Canvas::deselectBitmap()
+{
   if (tempBitmap_)
+  {
     SelectObject(hdc_, tempBitmap_);
+    tempBitmap_ = nullptr;
+  }    
 }
 /*
 bool gdi::Canvas::draw(const Bitmap& bitmap, const int x, const int y)const
@@ -575,13 +649,56 @@ SIZE gdi::Canvas::getTextSize(const std::string text)const
   return result;
 }
 
-gdi::Bitmap::Bitmap(WORD width, WORD height)
+gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   :canvas(Canvas(GetDC(NULL)))
 {
+  HDC screenDC = GetDC(NULL);
+  assert(screenDC != NULL);
+  HDC newDC = CreateCompatibleDC(screenDC);
+  //bitmapInfo_ = (BITMAPINFO) malloc(sizeof(BITMAPINFO) + 256 * sizeof(RGBQUAD));
+  bitmapInfo_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+  bitmapInfo_.bmiHeader.biWidth = width;
+  bitmapInfo_.bmiHeader.biHeight = -height;
+  bitmapInfo_.bmiHeader.biPlanes = 1;
+  bitmapInfo_.bmiHeader.biBitCount = bitCount;
+  bitmapInfo_.bmiHeader.biCompression = BI_RGB;
+  bitmapInfo_.bmiHeader.biSizeImage = -1 * bitmapInfo_.bmiHeader.biHeight * bitmapInfo_.bmiHeader.biWidth * (bitCount >> 3);
+  if (bitmapInfo_.bmiHeader.biBitCount < 16)
+    bitmapInfo_.bmiHeader.biClrUsed = (1 << bitmapInfo_.bmiHeader.biBitCount);
+  else
+    bitmapInfo_.bmiHeader.biClrUsed = 0;
+  bitmapInfo_.bmiHeader.biClrImportant = 0;
+  if (bitCount == 16)
+  {
+    bitmapInfo_.bmiHeader.biCompression = BI_BITFIELDS;
+    dib_.dsBitfields[0] = 0xF800;
+    dib_.dsBitfields[1] = 0x07E0;
+    dib_.dsBitfields[2] = 0x001F;
+    //32bit
+    //DIB.dsBitFields[0] : = 0x00FF0000;
+    //DIB.dsBitFields[1] : = 0x0000FF00;
+    //DIB.dsBitFields[2] : = 0x000000FF;
+    bitmapInfo_.bmiColors[0].rgbBlue = dib_.dsBitfields[0];
+    bitmapInfo_.bmiColors[0].rgbGreen = dib_.dsBitfields[1];
+    bitmapInfo_.bmiColors[0].rgbRed = dib_.dsBitfields[2];
+    bitmapInfo_.bmiColors[0].rgbReserved = 0x00;
+  }   
+  //dib_.dsBmih = bitmapInfo_.bmiHeader;
+  hBitmap_ = CreateDIBSection(screenDC, &bitmapInfo_, DIB_RGB_COLORS, &bitData_, NULL, 0);
+  /*
   HDC targetDC = GetDC(NULL);
   assert(targetDC != NULL);
   hBitmap_ = CreateCompatibleBitmap(targetDC, width, height);
   ReleaseDC(NULL, targetDC);
+  */
+  if (hBitmap_)
+  {
+    HGDIOBJ replaced = SelectObject(newDC, hBitmap_);
+    PatBlt(newDC, 0, 0, width, height, WHITENESS);
+    SelectObject(newDC, replaced);
+  }
+  DeleteDC(newDC);
+  ReleaseDC(0, screenDC);
   assert(hBitmap_ != NULL);
   initialization();
 }
@@ -594,6 +711,67 @@ gdi::Bitmap::Bitmap(HDC hdc, WORD width, WORD height)
   initialization();
 }
 
+bool gdi::Bitmap::loadFromFile(std::string path)
+{
+  bool result = false;
+  free();
+  hBitmap_ = (HBITMAP)LoadImageA(NULL, path.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);// 
+  result = initialization();
+  return result;
+}
+
+bool gdi::Bitmap::saveToFile(std::string path)
+{
+  HANDLE hFile;
+  BITMAPFILEHEADER hdr;
+  PBITMAPINFOHEADER pbih;
+  LPBYTE lpBits;
+  DWORD dwTemp;
+
+  pbih = &bitmapInfo_.bmiHeader;
+  lpBits = (LPBYTE)GlobalAlloc(GMEM_FIXED, pbih->biSizeImage);
+
+  if (!lpBits)
+  {
+    return false; // could not allocate bitmap
+  }
+
+  if (!GetDIBits(canvas.getDC(), hBitmap_, 0, pbih->biHeight, lpBits, &bitmapInfo_, DIB_RGB_COLORS))
+  {
+    return false; // could not allocate bitmap
+  }
+
+  hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
+    NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+  if (hFile == INVALID_HANDLE_VALUE)
+  {
+    return false; // Could not open file
+  }
+
+  // type == BM
+  hdr.bfType = 0x4d42;
+
+  hdr.bfSize = (sizeof(BITMAPFILEHEADER) + pbih->biSize + pbih->biClrUsed * sizeof(RGBQUAD) + pbih->biSizeImage);
+  hdr.bfReserved1 = 0;
+  hdr.bfReserved2 = 0;
+
+  hdr.bfOffBits = sizeof(BITMAPFILEHEADER) + pbih->biSize + pbih->biClrUsed * sizeof(RGBQUAD);
+
+  // write the bitmap file header to file
+  WriteFile(hFile, (LPVOID)&hdr, sizeof(BITMAPFILEHEADER), &dwTemp, NULL);
+
+  // write the bitmap header to file
+  WriteFile(hFile, (LPVOID)pbih, sizeof(BITMAPINFOHEADER) + pbih->biClrUsed * sizeof(RGBQUAD), &dwTemp, NULL);
+
+  // copy the bitmap colour data into the file
+  WriteFile(hFile, (LPSTR)lpBits, pbih->biSizeImage, &dwTemp, NULL);
+
+  CloseHandle(hFile);
+
+  GlobalFree((HGLOBAL)lpBits);
+}
+
 void gdi::Bitmap::setSize(WORD width, WORD height)
 {
   if (width!=dib_.dsBm.bmWidth || height != dib_.dsBm.bmHeight)
@@ -603,19 +781,14 @@ void gdi::Bitmap::setSize(WORD width, WORD height)
     dib.dsBm.bmHeight = height;
     dib.dsBmih.biWidth = width;
     dib.dsBmih.biHeight = height;
-    hBitmap_ = (HBITMAP)CopyImage(hBitmap_, IMAGE_BITMAP, width, height, LR_COPYDELETEORG | LR_CREATEDIBSECTION);
+    hBitmap_ = (HBITMAP)CopyImage(hBitmap_, IMAGE_BITMAP, width, height, LR_COPYDELETEORG | LR_CREATEDIBSECTION);// 
     initialization();
   }
 }
 
 gdi::Bitmap::~Bitmap()
 {
-  if (hBitmap_)
-    DeleteObject(hBitmap_);
-  //if (palette_)
-  //  DeleteObject(palette_);
-  //if (dibHandle_)
-  //  DeleteObject(dibHandle_);
+  free();
 }
 
 HBITMAP gdi::Bitmap::getHandle() const
@@ -638,20 +811,27 @@ WORD gdi::Bitmap::getBitsPerPixel() const
   return bitmap_.bmBitsPixel? bitmap_.bmBitsPixel : dib_.dsBm.bmBitsPixel;
 }
 
-void gdi::Bitmap::initialization()
+bool gdi::Bitmap::initialization()
 {
+  bool result = false;
   assert(hBitmap_ != NULL);
+  /*
+  bitmap_ = { 0 };
   GetObject(hBitmap_, sizeof(BITMAP), &bitmap_);
-  canvas.setBitmap(hBitmap_);
-  ///*
-  GetObject(hBitmap_, sizeof(DIBSECTION), &dib_);
+  */
+  //ZeroMemory(&dib_, sizeof(DIBSECTION));
+  dib_ = { 0 };
+  GetObject(hBitmap_, sizeof(DIBSECTION), &dib_.dsBm);
+  /*
   dib_.dsBmih.biSize = sizeof(BITMAPINFOHEADER);
   dib_.dsBmih.biWidth = dib_.dsBm.bmWidth;
   dib_.dsBmih.biHeight = dib_.dsBm.bmHeight;
   dib_.dsBmih.biPlanes = 1;
   dib_.dsBmih.biBitCount = dib_.dsBm.bmPlanes * dib_.dsBm.bmBitsPixel;
-  
-  ZeroMemory(&bitmapInfo_, sizeof(BITMAPINFOHEADER));
+  //*/
+  /*
+  bitmapInfo_ = { 0 };
+  //ZeroMemory(&bitmapInfo_, sizeof(BITMAPINFOHEADER));
   bitmapInfo_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
   GetDIBits(canvas.getDC(), hBitmap_, 0, 0, NULL, (BITMAPINFO*)&bitmapInfo_, DIB_RGB_COLORS);
   /*
@@ -660,6 +840,20 @@ void gdi::Bitmap::initialization()
   bitData_ = new BYTE[nSize];
   GetDIBits(canvas.getDC(), hBitmap_, 0, bitmapInfo_.bmiHeader.biHeight, bitData_, (BITMAPINFO*)&bitmapInfo_, DIB_RGB_COLORS);
   */
+  if (canvas.getBitmap() != hBitmap_)
+    canvas.setBitmap(hBitmap_);
+  result = true;
+  return result;
+}
+
+void gdi::Bitmap::free()
+{
+  if (hBitmap_)
+    DeleteObject(hBitmap_);
+  //if (palette_)
+  //  DeleteObject(palette_);
+  //if (dibHandle_)
+  //  DeleteObject(dibHandle_);
 }
 
 gdi::Pallete::Pallete()
