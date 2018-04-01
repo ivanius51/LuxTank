@@ -90,6 +90,7 @@ extern COLORREF ALLY_COLOR;
 extern COLORREF ENEMY_COLOR;
 
 extern const std::string WALL_TEXTURE;
+extern const std::string GOLD_TEXTURE;
 extern const std::string TANK_GREEN_1;
 extern const std::string TANK_BLUE_1;
 extern POINT DEFAULT_DIRECTION;

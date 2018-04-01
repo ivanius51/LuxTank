@@ -37,8 +37,10 @@ COLORREF ALLY_COLOR = RGB(0, 128, 0);
 COLORREF ENEMY_COLOR = RGB(128, 0, 0);
 
 const std::string WALL_TEXTURE = "res/wall.bmp";
+const std::string GOLD_TEXTURE = "res/treasure.bmp";
 const std::string TANK_GREEN_1 = "res/tankgreen.bmp";
 const std::string TANK_BLUE_1 = "res/tankblue.bmp";
+
 POINT DEFAULT_DIRECTION = { 0, -1 };
 
 inline int SQR(int x)

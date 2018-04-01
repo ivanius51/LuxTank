@@ -5,34 +5,22 @@
 
 #include <cassert>
 
-const COLORREF COLOR_WHITE = 0xFFFFFF;
-const COLORREF COLOR_GREY = 0x888888;
-const COLORREF COLOR_GREEN = 0x00FF00;
+const COLORREF COLOR_BLACK = 0;
+const COLORREF COLOR_MAROON = 0x000080;
+const COLORREF COLOR_GREEN = 0x008000;
+const COLORREF COLOR_OLIVE = 0x008080;
+const COLORREF COLOR_NAVY = 0x800000;
+const COLORREF COLOR_PURPLE = 0x800080;
+const COLORREF COLOR_TEAL = 0x808000;
+const COLORREF COLOR_LIME = 0x00FF00;
 const COLORREF COLOR_RED = 0x0000FF;
 const COLORREF COLOR_BLUE = 0xFF0000;
 const COLORREF COLOR_YELLOW = 0x00FFFF;
-const COLORREF COLOR_BLACK = 0;
+const COLORREF COLOR_FUCHSIA = 0xFF00FF;
+const COLORREF COLOR_AQUA = 0xFFFF00;
 const COLORREF COLOR_SILVER = 0xC0C0C0;
-/*
-clBlack = TColor($000000);
-clMaroon = TColor($000080);
-clGreen = TColor($008000);
-clOlive = TColor($008080);
-clNavy = TColor($800000);
-clPurple = TColor($800080);
-clTeal = TColor($808000);
-clGray = TColor($808080);
-clSilver = TColor($C0C0C0);
-clRed = TColor($0000FF);
-clLime = TColor($00FF00);
-clYellow = TColor($00FFFF);
-clBlue = TColor($FF0000);
-clFuchsia = TColor($FF00FF);
-clAqua = TColor($FFFF00);
-clLtGray = TColor($C0C0C0);
-clDkGray = TColor($808080);
-clWhite = TColor($FFFFFF);
-*/
+const COLORREF COLOR_GREY = 0x808080;
+const COLORREF COLOR_WHITE = 0xFFFFFF;
 
 using namespace gdi;
 
@@ -519,6 +507,13 @@ gdi::Bitmap::Bitmap(HDC hdc, WORD width, WORD height)
   initialization();
 }
 
+gdi::Bitmap::Bitmap(std::string path)
+  :canvas(Canvas(GetDC(NULL)))
+{
+  loadFromFile(path);
+
+}
+
 bool gdi::Bitmap::loadFromFile(std::string path)
 {
   bool result = false;
@@ -627,21 +622,27 @@ void gdi::Bitmap::setBitsPerPixel(const WORD bitCount)
   canvas.deselectBitmap();
 
   int  nColors = 1 << bitCount;
-  
+  RGBQUAD rgb[256];
+
   GetObject(hBitmap_, sizeof(BITMAP), &dib_.dsBm);
   dib.dsBm = dib_.dsBm;
   dib.dsBm.bmBits = nullptr;
   dib.dsBmih.biWidth = dib.dsBm.bmWidth;
   dib.dsBmih.biHeight = dib.dsBm.bmHeight;
   dib.dsBmih.biPlanes = 1;
-  dib.dsBmih.biBitCount = bitCount;
+  dib.dsBm.bmBitsPixel = dib.dsBmih.biBitCount = bitCount;
   dib.dsBmih.biCompression = BI_RGB;
-  dib.dsBmih.biClrUsed = 0;
+  dib.dsBmih.biSizeImage = dib.dsBmih.biHeight * dib.dsBmih.biWidth * (bitCount >> 3);
   dib.dsBmih.biClrUsed = (bitCount <= 8) ? nColors : 0;
-  if (bitCount == 8)
+  if (bitCount <= 8)
   {
-    //dc = GetDC(0);
-    pal = CreateHalftonePalette(dc);
+    HDC memDc = CreateCompatibleDC(NULL);
+    HGDIOBJ oldbitmap = SelectObject(memDc, hBitmap_);
+    GetDIBColorTable(memDc, 0, nColors, rgb);
+    SelectObject(memDc, oldbitmap);
+    DeleteDC(memDc);
+
+    //pal = CreateHalftonePalette(dc);
     //pal = (HPALETTE)GetStockObject(DEFAULT_PALETTE);
     /*
     LOGPALETTE lPal;
@@ -669,10 +670,10 @@ void gdi::Bitmap::setBitsPerPixel(const WORD bitCount)
     //dib.dsBitfields[2]  = 0x001F;
   }
 
-  UINT nSize = sizeof(BITMAPINFOHEADER);
+  UINT nSize = ((dib.dsBm.bmWidth * dib.dsBm.bmBitsPixel + 31) / 32) * 4 * dib.dsBm.bmHeight;
   if (bitCount <= 8)
     nSize += +nColors * sizeof(RGBQUAD);
-  BITMAPINFO* pBitmapInfo = (BITMAPINFO*)alloca(nSize);
+  BITMAPINFO* pBitmapInfo = (BITMAPINFO*)alloca(sizeof(BITMAPINFOHEADER) + nSize);
   dib.dsBmih.biSize = sizeof(pBitmapInfo->bmiHeader);
   dib.dsBmih.biPlanes = 1;
   pBitmapInfo->bmiHeader = dib.dsBmih;
@@ -804,7 +805,7 @@ bool gdi::Bitmap::initialization()
   //*/
   bitmapInfo_ = { 0 };
   bitmapInfo_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-  GetDIBits(canvas.getDC(), hBitmap_, 0, 0, NULL, (BITMAPINFO*)&bitmapInfo_, DIB_RGB_COLORS);
+  result = result && GetDIBits(canvas.getDC(), hBitmap_, 0, 0, NULL, (BITMAPINFO*)&bitmapInfo_, DIB_RGB_COLORS);
   /*
   int nDepth = bitmapInfo_.bmiHeader.biBitCount;
   int nSize = bitmapInfo_.bmiHeader.biHeight * ((bitmapInfo_.bmiHeader.biWidth * (nDepth == 32 ? 4 : 3) + 3) & ~3);
@@ -1296,4 +1297,16 @@ void gdi::Font::setFontQuality(const BYTE quality)
     return;
   font_.lfQuality = quality;
   setFont(font_);
+}
+
+gdi::Sprite::Sprite(const std::string path, UINT size)
+  :bitmap(path)
+{
+
+}
+
+gdi::Sprite::Sprite(const Bitmap & source, UINT size)
+  :bitmap(source)
+{
+
 }

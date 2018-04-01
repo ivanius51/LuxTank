@@ -14,4 +14,5 @@ write AIWork function for controll (update) AI objects.
 In far write Unit Tests for check objects creation, collisions, ets (write all things).
 +Delete Gold class and make it from wall;
 +EndGame text GameOver (Victory)
-TimeBased Update for all objects and check truly move (dont skip).
+//TimeBased Update for all objects and check truly move (dont skip).
+Restart method.

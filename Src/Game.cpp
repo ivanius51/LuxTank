@@ -335,15 +335,15 @@ void Game::startGame()
   //some test
   pause();
   BitBlt(hdc_, 0, 0, 1000, 1000, hdc_, 0, 0, BLACKNESS);
-
-  gdi::Bitmap bitmap(1000, 1000);
+  
+  gdi::Bitmap bitmap(windowSize_, windowSize_);
   bitmap.canvas.draw(buffer_);
-  BitBlt(hdc_, 0, 0, 1000, 1000, bitmap.canvas.getDC(), 0, 0, SRCCOPY);
+  BitBlt(hdc_, 0, 0, windowSize_, windowSize_, bitmap.canvas.getDC(), 0, 0, SRCCOPY);
   bitmap.saveToFile("D:\\test24.bmp");
   //bitmap.setBitsPerPixel(16);
-  bitmap.saveToFile("D:\\test16.bmp");
+  //bitmap.saveToFile("D:\\test16.bmp");
   //bitmap.setBitsPerPixel(8);
-  bitmap.saveToFile("D:\\test8.bmp");
+  //bitmap.saveToFile("D:\\test8.bmp");
 }
 
 void Game::stopGame()

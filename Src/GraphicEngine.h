@@ -9,7 +9,14 @@ extern const COLORREF COLOR_BLUE;
 extern const COLORREF COLOR_YELLOW;
 extern const COLORREF COLOR_BLACK;
 extern const COLORREF COLOR_SILVER;
-
+extern const COLORREF COLOR_MAROON;
+extern const COLORREF COLOR_OLIVE;
+extern const COLORREF COLOR_NAVY;
+extern const COLORREF COLOR_PURPLE;
+extern const COLORREF COLOR_TEAL;
+extern const COLORREF COLOR_LIME;
+extern const COLORREF COLOR_FUCHSIA;
+extern const COLORREF COLOR_AQUA;
 
 namespace gdi
 {
@@ -42,7 +49,7 @@ namespace gdi
     void setPenWidth(const UINT width = 1);
 
     bool setHDC(HDC hdc);
-    
+
     bool free();
     bool reset();
   private:
@@ -78,14 +85,14 @@ namespace gdi
     bool free();
     bool reset();
     bool setHDC(HDC hdc);
-    
+
     const COLORREF* color;
     const UINT* style;
     const ULONG_PTR* hatch;
   private:
     void update();
     HDC hdc_ = nullptr;
-    LOGBRUSH brush_ = {0};
+    LOGBRUSH brush_ = { 0 };
     HBRUSH hBrush_ = nullptr;
     HGDIOBJ tempBrush_ = nullptr;
   };
@@ -185,7 +192,7 @@ namespace gdi
     int bkMode_ = TRANSPARENT;
     DWORD copyMode_ = SRCCOPY;
     WORD penMode_ = R2_COPYPEN;
-    
+
     HBITMAP hBitmap_ = nullptr;
     HGDIOBJ tempBitmap_ = nullptr;
     COLORREF bkColor_ = 0;
@@ -208,14 +215,15 @@ namespace gdi
   class Bitmap
   {
   public:
-    Bitmap(WORD width = 0, WORD height = 0, WORD bitCount = 24);
-    Bitmap(HDC hdc, WORD width, WORD height);
+    Bitmap(const WORD width = 0, const  WORD height = 0, const  WORD bitCount = 24);
+    Bitmap(const HDC hdc, const  WORD width, const  WORD height);
+    Bitmap(const std::string path);
     ~Bitmap();
 
     bool loadFromFile(std::string path);
     bool saveToFile(std::string path);
     void setSize(WORD width, WORD height);
-    
+
     Canvas canvas;
     HBITMAP getHandle() const;
     LONG getWidth() const;
@@ -223,23 +231,25 @@ namespace gdi
     WORD getBitsPerPixel() const;
 
     void free();
-  private:
+  protected:
     //not work good
     void setBitsPerPixel(const WORD bitCount);
-
-    bool initialization();   
-    //
+    bool initialization();
+  private:
     HBITMAP hBitmap_ = nullptr;
     HBITMAP oldhBitmap_ = nullptr;
     HPALETTE hPalette_ = nullptr;
-    //BITMAP bitmap_ = { 0 };
     BITMAPINFO bitmapInfo_ = { 0 };
     DIBSECTION dib_ = { 0 };
     VOID* bitData_;
   };
 
-  class Sprite : public Bitmap
+  class Sprite
   {
+  public:
+    Sprite(const std::string path, UINT size);
+    Sprite(const Bitmap& source, UINT size);
+    Bitmap bitmap;
 
   };
 

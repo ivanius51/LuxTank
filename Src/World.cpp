@@ -236,12 +236,12 @@ void World::generateNewMap()
   for (int i = int(mapSize_ / 2 - 1); i <= int(mapSize_ / 2 + 1); i++)
   {
     point = { i, int(mapSize_ - 2) };
-    gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE));
+    gameobject.reset(new Wall(point, WALL_HP, 0, WALL_TEXTURE, WALL_COLOR));
     tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
     point = { i, int(mapSize_ - 1) };
     if (i == (mapSize_ / 2))
     {
-      gameobject.reset(new Wall(point, GOLD_HP, 0, COLOR_YELLOW / 2, COLOR_YELLOW));
+      gameobject.reset(new Wall(point, GOLD_HP, 0, GOLD_TEXTURE, COLOR_YELLOW));
       gold_ = gameobject;
       gameobject.get()->bindUpdateCallback([](GameObject& gameobject) {if (gameobject.isDead()) Game::instance().stopGame(); });
       tiles_.push_back(std::shared_ptr<GameObject>(gameobject));
