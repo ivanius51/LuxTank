@@ -8,6 +8,8 @@ extern const COLORREF COLOR_RED;
 extern const COLORREF COLOR_BLUE;
 extern const COLORREF COLOR_YELLOW;
 extern const COLORREF COLOR_BLACK;
+extern const COLORREF COLOR_SILVER;
+
 
 namespace gdi
 {
@@ -192,8 +194,10 @@ namespace gdi
   class Pallete
   {
   public:
-    Pallete();
+    Pallete(int nEntries = 256);
     Pallete(HPALETTE palette);
+    ~Pallete();
+    HPALETTE getPallete();
   private:
     LOGPALETTE paletteInfo_;
     PALETTEENTRY arPalEntries[255];
@@ -204,7 +208,7 @@ namespace gdi
   class Bitmap
   {
   public:
-    Bitmap(WORD width = 0, WORD height = 0, WORD bitCount = 15);
+    Bitmap(WORD width = 0, WORD height = 0, WORD bitCount = 24);
     Bitmap(HDC hdc, WORD width, WORD height);
     ~Bitmap();
 
@@ -220,10 +224,14 @@ namespace gdi
 
     void free();
   private:
+    //not work good
+    void setBitsPerPixel(const WORD bitCount);
+
     bool initialization();   
     //
     HBITMAP hBitmap_ = nullptr;
     HBITMAP oldhBitmap_ = nullptr;
+    HPALETTE hPalette_ = nullptr;
     //BITMAP bitmap_ = { 0 };
     BITMAPINFO bitmapInfo_ = { 0 };
     DIBSECTION dib_ = { 0 };

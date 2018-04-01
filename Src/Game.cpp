@@ -339,7 +339,11 @@ void Game::startGame()
   gdi::Bitmap bitmap(1000, 1000);
   bitmap.canvas.draw(buffer_);
   BitBlt(hdc_, 0, 0, 1000, 1000, bitmap.canvas.getDC(), 0, 0, SRCCOPY);
-  bitmap.saveToFile("D:\\test.bmp");
+  bitmap.saveToFile("D:\\test24.bmp");
+  //bitmap.setBitsPerPixel(16);
+  bitmap.saveToFile("D:\\test16.bmp");
+  //bitmap.setBitsPerPixel(8);
+  bitmap.saveToFile("D:\\test8.bmp");
 }
 
 void Game::stopGame()

@@ -12,6 +12,27 @@ const COLORREF COLOR_RED = 0x0000FF;
 const COLORREF COLOR_BLUE = 0xFF0000;
 const COLORREF COLOR_YELLOW = 0x00FFFF;
 const COLORREF COLOR_BLACK = 0;
+const COLORREF COLOR_SILVER = 0xC0C0C0;
+/*
+clBlack = TColor($000000);
+clMaroon = TColor($000080);
+clGreen = TColor($008000);
+clOlive = TColor($008080);
+clNavy = TColor($800000);
+clPurple = TColor($800080);
+clTeal = TColor($808000);
+clGray = TColor($808080);
+clSilver = TColor($C0C0C0);
+clRed = TColor($0000FF);
+clLime = TColor($00FF00);
+clYellow = TColor($00FFFF);
+clBlue = TColor($FF0000);
+clFuchsia = TColor($FF00FF);
+clAqua = TColor($FFFF00);
+clLtGray = TColor($C0C0C0);
+clDkGray = TColor($808080);
+clWhite = TColor($FFFFFF);
+*/
 
 using namespace gdi;
 
@@ -409,15 +430,13 @@ HBITMAP getBitmap(BYTE* imageBuffer, int w, int h, HDC bitmapDC) {
 gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   :canvas(Canvas(GetDC(NULL)))
 {
-  /*
   HDC screenDC = GetDC(NULL);
+  /*
   assert(screenDC != NULL);
   HDC newDC = CreateCompatibleDC(screenDC);
   assert(newDC != NULL);
   hBitmap_ = CreateCompatibleBitmap(screenDC, width, height);
   */
-
-  //bitmapInfo_ = (BITMAPINFO) malloc(sizeof(BITMAPINFO) + 256 * sizeof(RGBQUAD));
   bitmapInfo_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
   bitmapInfo_.bmiHeader.biWidth = width;
   bitmapInfo_.bmiHeader.biHeight = -height;
@@ -429,38 +448,65 @@ gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   bitmapInfo_.bmiHeader.biClrImportant = 0;
   if (bitCount <= 16)
   {
-    if (bitCount < 15)
+    BITMAPINFO* pBitmapInfo = (BITMAPINFO*)alloca(offsetof(BITMAPINFO, bmiColors[256]));
+    assert(pBitmapInfo != NULL);
+    *pBitmapInfo = bitmapInfo_;
+    if (bitCount <= 8)
     {
-      bitmapInfo_.bmiHeader.biClrUsed = (1 << bitmapInfo_.bmiHeader.biBitCount);
+      pBitmapInfo->bmiHeader.biClrUsed = (1 << bitmapInfo_.bmiHeader.biBitCount);
+      //grayscale
+      for (int i = 0; i < pBitmapInfo->bmiHeader.biClrUsed - 1; ++i)
+      {
+        pBitmapInfo->bmiColors[i].rgbRed =
+          pBitmapInfo->bmiColors[i].rgbGreen =
+          pBitmapInfo->bmiColors[i].rgbBlue = (BYTE)(i*(255 / (pBitmapInfo->bmiHeader.biClrUsed - 1)));
+        pBitmapInfo->bmiColors[i].rgbReserved = 0;
+      }
     }
-    bitmapInfo_.bmiHeader.biCompression = BI_BITFIELDS;
-    dib_.dsBitfields[0] = 0xF800;
-    dib_.dsBitfields[1] = 0x07E0;
-    dib_.dsBitfields[2] = 0x001F;
-    //32bit
-    //DIB.dsBitFields[0] : = 0x00FF0000;
-    //DIB.dsBitFields[1] : = 0x0000FF00;
-    //DIB.dsBitFields[2] : = 0x000000FF;
-    bitmapInfo_.bmiColors[0].rgbBlue = dib_.dsBitfields[0];
-    bitmapInfo_.bmiColors[0].rgbGreen = dib_.dsBitfields[1];
-    bitmapInfo_.bmiColors[0].rgbRed = dib_.dsBitfields[2];
-    bitmapInfo_.bmiColors[0].rgbReserved = 0x00;
-    hBitmap_ = CreateDIBSection(NULL, &bitmapInfo_, DIB_RGB_COLORS, &bitData_, NULL, 0);
+    else
+    {
+      //bitmapInfo_.bmiHeader.biCompression = BI_BITFIELDS;
+      dib_.dsBitfields[0] = 0xF800;
+      dib_.dsBitfields[1] = 0x07E0;
+      dib_.dsBitfields[2] = 0x001F;
+      //32bit
+      //DIB.dsBitFields[0] : = 0x00FF0000;
+      //DIB.dsBitFields[1] : = 0x0000FF00;
+      //DIB.dsBitFields[2] : = 0x000000FF;
+      pBitmapInfo->bmiColors[0].rgbBlue = GetRValue(dib_.dsBitfields[0]);
+      pBitmapInfo->bmiColors[0].rgbGreen = GetGValue(dib_.dsBitfields[0]);
+      pBitmapInfo->bmiColors[0].rgbRed = GetBValue(dib_.dsBitfields[0]);
+      pBitmapInfo->bmiColors[1].rgbBlue = GetRValue(dib_.dsBitfields[1]);
+      pBitmapInfo->bmiColors[1].rgbGreen = GetGValue(dib_.dsBitfields[1]);
+      pBitmapInfo->bmiColors[1].rgbRed = GetBValue(dib_.dsBitfields[1]);
+      pBitmapInfo->bmiColors[2].rgbBlue = GetRValue(dib_.dsBitfields[2]);
+      pBitmapInfo->bmiColors[2].rgbGreen = GetGValue(dib_.dsBitfields[2]);
+      pBitmapInfo->bmiColors[2].rgbRed = GetBValue(dib_.dsBitfields[2]);
+      //pBitmapInfo->bmiColors[1].rgbBlue = dib_.dsBitfields[0];
+      //pBitmapInfo->bmiColors[2].rgbGreen = dib_.dsBitfields[1];
+      //pBitmapInfo->bmiColors[3].rgbRed = dib_.dsBitfields[2];
+      //pBitmapInfo->bmiColors[4].rgbReserved = 0x00;
+      //hPalette_ = CreateHalftonePalette(screenDC);
+      //assert(hPalette_ != NULL);
+    }
+    hBitmap_ = CreateDIBSection(NULL, pBitmapInfo, DIB_RGB_COLORS, &bitData_, NULL, 0);
   }
   else
     hBitmap_ = CreateDIBSection(NULL, &bitmapInfo_, DIB_RGB_COLORS, &bitData_, NULL, 0);
   //dib_.dsBmih = bitmapInfo_.bmiHeader;
-  
+
   /*
   if (hBitmap_)
   {
+    HDC newDC = CreateCompatibleDC(screenDC);
     HGDIOBJ replaced = SelectObject(newDC, hBitmap_);
     PatBlt(newDC, 0, 0, width, height, WHITENESS);
     SelectObject(newDC, replaced);
+    DeleteDC(newDC);
   }
   DeleteDC(newDC);
-  ReleaseDC(0, screenDC);
   */
+  ReleaseDC(NULL, screenDC);
   assert(hBitmap_ != NULL);
   initialization();
 }
@@ -506,6 +552,11 @@ bool gdi::Bitmap::saveToFile(std::string path)
   if (!GetDIBits(canvas.getDC(), hBitmap_, 0, bitmapInfo_.bmiHeader.biHeight, lpBits, &bitmapInfo_, DIB_RGB_COLORS))
   {
     return false; // could not allocate bitmap
+  }
+
+  if (bitmapInfo_.bmiHeader.biBitCount < 15)
+  {
+    bitmapInfo_.bmiHeader.biClrUsed = (1 << bitmapInfo_.bmiHeader.biBitCount);
   }
 
   hFile = CreateFile(path.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
@@ -563,6 +614,151 @@ void gdi::Bitmap::setSize(WORD width, WORD height)
   }
 }
 
+void gdi::Bitmap::setBitsPerPixel(const WORD bitCount)
+{
+  if (bitCount < 1 || bitCount>32)
+    return;
+  DIBSECTION dib = { 0 };
+  HPALETTE pal = 0;
+  HPALETTE newPal = 0;
+  HDC dc = GetDC(0);
+  HDC newDc = CreateCompatibleDC(dc);
+  unsigned char* ppvBits;
+  canvas.deselectBitmap();
+
+  int  nColors = 1 << bitCount;
+  
+  GetObject(hBitmap_, sizeof(BITMAP), &dib_.dsBm);
+  dib.dsBm = dib_.dsBm;
+  dib.dsBm.bmBits = nullptr;
+  dib.dsBmih.biWidth = dib.dsBm.bmWidth;
+  dib.dsBmih.biHeight = dib.dsBm.bmHeight;
+  dib.dsBmih.biPlanes = 1;
+  dib.dsBmih.biBitCount = bitCount;
+  dib.dsBmih.biCompression = BI_RGB;
+  dib.dsBmih.biClrUsed = 0;
+  dib.dsBmih.biClrUsed = (bitCount <= 8) ? nColors : 0;
+  if (bitCount == 8)
+  {
+    //dc = GetDC(0);
+    pal = CreateHalftonePalette(dc);
+    //pal = (HPALETTE)GetStockObject(DEFAULT_PALETTE);
+    /*
+    LOGPALETTE lPal;
+    lPal.palVersion = 0x300;
+    lPal.palNumEntries = 16;
+    int sysPalSize = GetDeviceCaps(dc, SIZEPALETTE);
+    if (sysPalSize >= 16) 
+    {
+      GetSystemPaletteEntries(dc, 0, 8, &lPal.palPalEntry[0]);
+      if ((COLORREF)(LPWORD)&lPal.palPalEntry[7] == COLOR_SILVER)
+      {
+        GetSystemPaletteEntries(dc, sysPalSize - 7, 7, &lPal.palPalEntry[9]);
+      }
+      GetSystemPaletteEntries(dc, sysPalSize - 8, 8, &lPal.palPalEntry[9]);
+    }
+    */
+    //ReleaseDC(0, dc);
+  }
+  if (bitCount == 16)
+  {
+    pal = CreateHalftonePalette(dc);
+    //dib.dsBmih.biCompression = BI_BITFIELDS;
+    //dib.dsBitfields[0]  = 0xF800;
+    //dib.dsBitfields[1]  = 0x07E0;
+    //dib.dsBitfields[2]  = 0x001F;
+  }
+
+  UINT nSize = sizeof(BITMAPINFOHEADER);
+  if (bitCount <= 8)
+    nSize += +nColors * sizeof(RGBQUAD);
+  BITMAPINFO* pBitmapInfo = (BITMAPINFO*)alloca(nSize);
+  dib.dsBmih.biSize = sizeof(pBitmapInfo->bmiHeader);
+  dib.dsBmih.biPlanes = 1;
+  pBitmapInfo->bmiHeader = dib.dsBmih;
+  dib.dsBm.bmWidth = dib.dsBmih.biWidth;
+  dib.dsBm.bmHeight = dib.dsBmih.biHeight;
+  HBITMAP newBitmap = nullptr;
+  
+  if (bitCount == 8)
+  {
+    int colorcount;
+    //HGDIOBJ tempScr = SelectObject(newDc, hBitmap_);
+    //colorcount = GetDIBColorTable(dc, 0, 256, pBitmapInfo->bmiColors);
+    //SelectObject(newDc, tempScr);
+
+    if (pal)
+    {
+      LOGPALETTE* lPal = (LOGPALETTE*)alloca(sizeof(LOGPALETTE) + sizeof(PALETTEENTRY) * 256);
+      lPal->palVersion = 0x300;
+      GetObject(pal, 4, &lPal->palNumEntries);
+      GetPaletteEntries(pal, 0, lPal->palNumEntries, (LPPALETTEENTRY)lPal->palPalEntry);
+      newPal = CreatePalette(lPal);
+
+      colorcount = 0;
+      GetObject(pal, sizeof(colorcount), &colorcount);
+      GetPaletteEntries(pal, 0, colorcount, (LPPALETTEENTRY)pBitmapInfo->bmiColors);
+      for (int i = 0; i < colorcount; i++)
+      {
+        std::swap(pBitmapInfo->bmiColors[i].rgbBlue, pBitmapInfo->bmiColors[i].rgbRed);
+      }    
+    }
+    //LPWORD pIndex = (LPWORD)pBitmapInfo->bmiColors;
+    //for (int i = 0; i < nColors; i++) *pIndex++ = i;
+    newBitmap = CreateDIBSection(dc, pBitmapInfo, DIB_RGB_COLORS, (LPVOID*)&ppvBits, NULL, NULL);
+  }
+  else
+  {
+    /*
+    pBitmapInfo->bmiColors[0].rgbBlue = GetRValue(dib_.dsBitfields[0]);
+    pBitmapInfo->bmiColors[0].rgbGreen = GetGValue(dib_.dsBitfields[0]);
+    pBitmapInfo->bmiColors[0].rgbRed = GetBValue(dib_.dsBitfields[0]);
+    pBitmapInfo->bmiColors[0].rgbBlue = GetRValue(dib_.dsBitfields[0]);
+    pBitmapInfo->bmiColors[0].rgbGreen = GetGValue(dib_.dsBitfields[0]);
+    pBitmapInfo->bmiColors[0].rgbRed = GetBValue(dib_.dsBitfields[0]);
+    pBitmapInfo->bmiColors[1].rgbBlue = GetRValue(dib_.dsBitfields[1]);
+    pBitmapInfo->bmiColors[1].rgbGreen = GetGValue(dib_.dsBitfields[1]);
+    pBitmapInfo->bmiColors[1].rgbRed = GetBValue(dib_.dsBitfields[1]);
+    pBitmapInfo->bmiColors[2].rgbBlue = GetRValue(dib_.dsBitfields[2]);
+    pBitmapInfo->bmiColors[2].rgbGreen = GetGValue(dib_.dsBitfields[2]);
+    pBitmapInfo->bmiColors[2].rgbRed = GetBValue(dib_.dsBitfields[2]);
+    */
+    newBitmap = CreateDIBSection(dc, pBitmapInfo, DIB_RGB_COLORS, (LPVOID*)&ppvBits, NULL, NULL);
+  }
+  ///*
+  if (pal)
+  {
+    HGDIOBJ tempScr = SelectObject(newDc, newBitmap);
+
+    HPALETTE pal1 = SelectPalette(newDc, pal, FALSE);
+    RealizePalette(newDc);
+    PatBlt(newDc, 0, 0, dib.dsBm.bmWidth, dib.dsBm.bmHeight, WHITENESS);
+
+    HDC oldDc = CreateCompatibleDC(dc);
+    HGDIOBJ oldScr = SelectObject(oldDc, hBitmap_);
+    HPALETTE pal2 = SelectPalette(oldDc, newPal, FALSE);
+    RealizePalette(oldDc);
+    BitBlt(newDc, 0, 0, dib.dsBm.bmWidth, dib.dsBm.bmHeight, oldDc, 0, 0, SRCCOPY);
+    SelectPalette(oldDc, pal2, TRUE);
+    SelectObject(oldDc, oldScr);
+    DeleteDC(oldDc);
+
+    SelectPalette(newDc, pal1, TRUE);
+    SelectObject(newDc, tempScr);
+  }
+  //*/
+
+  assert(ppvBits != NULL);
+  GetDIBits(newDc, hBitmap_, 0, ::abs(dib.dsBmih.biHeight), ppvBits, pBitmapInfo, DIB_RGB_COLORS);
+  drawBitmap(dc, 0, 0, hBitmap_);
+  DeleteObject(hBitmap_);
+  DeleteDC(newDc);
+  drawBitmap(dc, 0, 0, newBitmap);
+  ReleaseDC(0, dc);
+  hBitmap_ = newBitmap;
+  initialization();
+}
+
 gdi::Bitmap::~Bitmap()
 {
   free();
@@ -598,7 +794,7 @@ bool gdi::Bitmap::initialization()
   */
   //ZeroMemory(&dib_, sizeof(DIBSECTION));
   dib_ = { 0 };
-  result = GetObject(hBitmap_, sizeof(DIBSECTION), &dib_.dsBm);
+  result = GetObject(hBitmap_, sizeof(DIBSECTION), &dib_);
   /*
   dib_.dsBmih.biSize = sizeof(BITMAPINFOHEADER);
   dib_.dsBmih.biWidth = dib_.dsBm.bmWidth;
@@ -633,12 +829,28 @@ void gdi::Bitmap::free()
   //  DeleteObject(dibHandle_);
 }
 
-gdi::Pallete::Pallete()
+gdi::Pallete::Pallete(int nEntries)
 {
-  paletteInfo_.palVersion = 0x0300;
-  paletteInfo_.palNumEntries = 0;
-  ::memset(paletteInfo_.palPalEntry, 0, 256 * sizeof(PALETTEENTRY));
-  palette_ = CreatePalette(&paletteInfo_);
+  if (nEntries <= 256)
+  {
+    paletteInfo_.palVersion = 0x0300;
+    paletteInfo_.palNumEntries = nEntries;
+    ::memset(paletteInfo_.palPalEntry, 0, nEntries * sizeof(PALETTEENTRY));
+    for (int i = 0; i < nEntries; i++)
+    {
+      paletteInfo_.palPalEntry[i].peRed =
+        paletteInfo_.palPalEntry[i].peGreen =
+        paletteInfo_.palPalEntry[i].peBlue = (BYTE)(i*(255 / (nEntries - 1)));
+    }
+    palette_ = CreatePalette(&paletteInfo_);
+    free(&paletteInfo_.palPalEntry);
+  }
+  else
+  {
+    HDC screenDC = GetDC(NULL);
+    palette_ = CreateHalftonePalette(screenDC);
+    ReleaseDC(NULL, screenDC);
+  }
 }
 
 gdi::Pallete::Pallete(HPALETTE palette)
@@ -651,6 +863,17 @@ gdi::Pallete::Pallete(HPALETTE palette)
     GetPaletteEntries(palette, 0, paletteSize, paletteInfo_.palPalEntry);
     palette_ = CreatePalette(&paletteInfo_);
   }
+}
+
+gdi::Pallete::~Pallete()
+{
+  if (palette_)
+    DeleteObject(palette_);
+}
+
+HPALETTE gdi::Pallete::getPallete()
+{
+  return palette_;
 }
 
 void gdi::Pen::setPen(const COLORREF color, const UINT style, const UINT width)
