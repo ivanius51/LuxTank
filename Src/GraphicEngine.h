@@ -145,9 +145,10 @@ namespace gdi
     bool drawTo(const HBITMAP hBitmap, const int x = 0, const int y = 0)const;
     //bool draw(const Bitmap& bitmap, const int x, const int y)const;
     bool draw(const Bitmap& bitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0)const;
+    bool drawOffcet(const Bitmap& bitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0)const;
     //bool draw(const HBITMAP hBitmap, const int x, const int y)const;
     bool draw(const HBITMAP hBitmap, const POINT point)const;
-    bool draw(const HBITMAP hBitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0)const;
+    bool draw(const HBITMAP hBitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0, const bool stretch = true)const;
     bool draw(const HBITMAP hBitmap, const RECT rect)const;
     bool rotate(const HBITMAP hBitmap, const int degres, bool AdjustSize = false)const;
     bool rotate(const Bitmap& bitmap, const int degres, bool AdjustSize = false)const;
@@ -247,10 +248,44 @@ namespace gdi
   class Sprite
   {
   public:
-    Sprite(const std::string path, UINT size);
-    Sprite(const Bitmap& source, UINT size);
-    Bitmap bitmap;
+    Sprite(const std::string path, const WORD size);
+    Sprite(const Bitmap& source, const WORD size);
+    Bitmap storage;
+    Bitmap currentImage;
 
+    WORD getCount();
+    WORD getRowCount();
+    WORD getColumnCount();
+
+    bool setCell(const WORD index);
+    bool setCell(const WORD nRow, const WORD nColumn);
+  private:
+    WORD size_ = 0;
+    int cellIndex_ = -1;
+
+  };
+
+  class AnimatedSprite : public Sprite
+  {
+  public:
+    AnimatedSprite(const std::string path, const WORD size, WORD fps = 5, WORD lastFrame = 0);
+    AnimatedSprite(const Bitmap& source, const WORD size, WORD fps = 5, WORD lastFrame = 0);
+    bool update(const double elapsed);
+    unsigned char getLoopType()const;
+    void setOneWayFlow(bool oneWay = true);
+    void setFPS(WORD fps = 5);
+    void setFrame(WORD frame= 0);
+    void setLastFrame(WORD lastFrame = 0);
+    bool isLoop()const;
+    bool isOneWayFlow()const;
+  private:
+    bool forwardWay_ = true;
+    bool oneWayFlow_ = true;
+    bool loop_ = true;
+    double frameTime_ = 0;
+    WORD frameDelay_ = 1000;//fps = 1
+    WORD currentFrame_ = 0;
+    WORD lastFrame_ = 0;
   };
 
   class GraphicEngine

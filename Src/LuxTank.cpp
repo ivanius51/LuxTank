@@ -38,7 +38,7 @@ void gameLoop()
 int main()
 {
   //randomization
-  srand(GetTickCount());
+  //srand(GetTickCount());
   //can edit settings and load it from file
   Game::instance().initialization(GetConsoleWindow(), false, MAP_SIZE, TILE_SIZE, MAX_FPS);
 

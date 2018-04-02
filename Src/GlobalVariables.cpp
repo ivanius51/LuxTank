@@ -164,8 +164,8 @@ namespace gdi {
         }
         int OffsetX = lround((Width - Width * Cosinus + Height * Sinus) / 2);
         int OffsetY = lround((Height - Width * Sinus - Height * Cosinus) / 2);
-        Points[0].x = lround(OffsetX);
-        Points[0].y = lround(OffsetY);
+        Points[0].x = (OffsetX);
+        Points[0].y = (OffsetY);
         Points[1].x = lround(OffsetX + Width * Cosinus);
         Points[1].y = lround(OffsetY + Width * Sinus);
         Points[2].x = lround(OffsetX - Height * Sinus);

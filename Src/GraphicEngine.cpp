@@ -3,7 +3,7 @@
 
 #include "GlobalVariables.h"
 
-#include <cassert>
+#include <cassert>     
 
 const COLORREF COLOR_BLACK = 0;
 const COLORREF COLOR_MAROON = 0x000080;
@@ -181,41 +181,23 @@ void gdi::Canvas::deselectBitmap()
     tempBitmap_ = nullptr;
   }
 }
-/*
-bool gdi::Canvas::draw(const Bitmap& bitmap, const int x, const int y)const
-{
-  if (!hdc_)
-    return false;
-  return draw(bitmap.getHandle(), x, y);
-}
-
-bool gdi::Canvas::draw(const HBITMAP hBitmap, const int x, const int y)const
-{
-if (!hdc_)
-return false;
-bool result = false;
-if (hBitmap)
-{
-HDC hDC = CreateCompatibleDC(hdc_);
-HGDIOBJ replaced = SelectObject(hDC, hBitmap);
-if (replaced)
-{
-BITMAP bitmap;
-GetObject(hBitmap, sizeof(BITMAP), &bitmap);
-bool result = BitBlt(hdc_, x, y, bitmap.bmWidth, bitmap.bmHeight, hDC, 0, 0, copyMode);
-SelectObject(hDC, replaced);
-}
-DeleteDC(hDC);
-}
-return result;
-}
-*/
 
 bool gdi::Canvas::draw(const Bitmap& bitmap, const int x, const int y, const int width, const int height)const
 {
   if (!hdc_)
     return false;
-  return draw(bitmap.getHandle(), x, y, width, height);
+  bool result = false;
+  result = BitBlt(hdc_, x, y, width, height, bitmap.canvas.getDC(), 0, 0, copyMode_);
+  return result;
+}
+
+bool gdi::Canvas::drawOffcet(const Bitmap & bitmap, const int x, const int y, const int width, const int height) const
+{
+  if (!hdc_)
+    return false;
+  bool result = false;
+  result = BitBlt(hdc_, 0, 0, width, height, bitmap.canvas.getDC(), x, y, copyMode_);
+  return result;
 }
 
 bool gdi::Canvas::draw(const HBITMAP hBitmap, const POINT point)const
@@ -225,7 +207,7 @@ bool gdi::Canvas::draw(const HBITMAP hBitmap, const POINT point)const
   return draw(hBitmap, point.x, point.y);
 }
 
-bool gdi::Canvas::draw(const HBITMAP hBitmap, const int x, const int y, const int width, const int height)const
+bool gdi::Canvas::draw(const HBITMAP hBitmap, const int x, const int y, const int width, const int height, const bool stretch)const
 {
   if (!hdc_)
     return false;
@@ -238,10 +220,17 @@ bool gdi::Canvas::draw(const HBITMAP hBitmap, const int x, const int y, const in
     {
       BITMAP bitmap;
       GetObject(hBitmap, sizeof(BITMAP), &bitmap);
-      if ((width == 0 || bitmap.bmWidth == width) && (height == 0 || bitmap.bmHeight == height))
-        result = BitBlt(hdc_, x, y, bitmap.bmWidth, bitmap.bmHeight, hDC, 0, 0, copyMode_);
+      if (!stretch)
+      {
+        if ((width == 0 || bitmap.bmWidth == width) && (height == 0 || bitmap.bmHeight == height))
+          result = BitBlt(hdc_, x, y, bitmap.bmWidth, bitmap.bmHeight, hDC, 0, 0, copyMode_);
+        else
+          if (width && height)
+            result = BitBlt(hdc_, x, y, width, height, hDC, 0, 0, copyMode_);
+      }
       else
-        result = StretchBlt(hdc_, x, y, width, height, hDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, copyMode_);
+        if (width && height)
+          result = StretchBlt(hdc_, x, y, width, height, hDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, copyMode_);
       SelectObject(hDC, replaced);
     }
     DeleteDC(hDC);
@@ -283,8 +272,8 @@ bool gdi::Canvas::rotate(const HBITMAP hBitmap, const int degres, bool AdjustSiz
       }
       int OffsetX = lround((Width - Width * Cosinus + Height * Sinus) / 2);
       int OffsetY = lround((Height - Width * Sinus - Height * Cosinus) / 2);
-      Points[0].x = lround(OffsetX);
-      Points[0].y = lround(OffsetY);
+      Points[0].x = (OffsetX);
+      Points[0].y = (OffsetY);
       Points[1].x = lround(OffsetX + Width * Cosinus);
       Points[1].y = lround(OffsetY + Width * Sinus);
       Points[2].x = lround(OffsetX - Height * Sinus);
@@ -649,7 +638,7 @@ void gdi::Bitmap::setBitsPerPixel(const WORD bitCount)
     lPal.palVersion = 0x300;
     lPal.palNumEntries = 16;
     int sysPalSize = GetDeviceCaps(dc, SIZEPALETTE);
-    if (sysPalSize >= 16) 
+    if (sysPalSize >= 16)
     {
       GetSystemPaletteEntries(dc, 0, 8, &lPal.palPalEntry[0]);
       if ((COLORREF)(LPWORD)&lPal.palPalEntry[7] == COLOR_SILVER)
@@ -680,7 +669,7 @@ void gdi::Bitmap::setBitsPerPixel(const WORD bitCount)
   dib.dsBm.bmWidth = dib.dsBmih.biWidth;
   dib.dsBm.bmHeight = dib.dsBmih.biHeight;
   HBITMAP newBitmap = nullptr;
-  
+
   if (bitCount == 8)
   {
     int colorcount;
@@ -702,7 +691,7 @@ void gdi::Bitmap::setBitsPerPixel(const WORD bitCount)
       for (int i = 0; i < colorcount; i++)
       {
         std::swap(pBitmapInfo->bmiColors[i].rgbBlue, pBitmapInfo->bmiColors[i].rgbRed);
-      }    
+      }
     }
     //LPWORD pIndex = (LPWORD)pBitmapInfo->bmiColors;
     //for (int i = 0; i < nColors; i++) *pIndex++ = i;
@@ -1299,14 +1288,128 @@ void gdi::Font::setFontQuality(const BYTE quality)
   setFont(font_);
 }
 
-gdi::Sprite::Sprite(const std::string path, UINT size)
-  :bitmap(path)
+gdi::Sprite::Sprite(const std::string path, WORD size)
+  :storage(path), currentImage(size, size)
 {
-
+  size_ = size;
 }
 
-gdi::Sprite::Sprite(const Bitmap & source, UINT size)
-  :bitmap(source)
+gdi::Sprite::Sprite(const Bitmap & source, WORD size)
+  : storage(source), currentImage(size, size)
 {
+  size_ = size;
+}
 
+WORD gdi::Sprite::getCount()
+{
+  return WORD(getRowCount() * getColumnCount());
+}
+
+WORD gdi::Sprite::getRowCount()
+{
+  return WORD(storage.getHeight() / size_);
+}
+
+WORD gdi::Sprite::getColumnCount()
+{
+  return WORD(storage.getWidth() / size_);
+}
+
+bool gdi::Sprite::setCell(const WORD index)
+{
+  if ((cellIndex_ != index) && (index <= getCount()))
+  {
+    cellIndex_ = index;
+    int x = (index % (getColumnCount() + 1) -1)*size_;
+    int y = (index / (getColumnCount() + 1))*size_;
+    return currentImage.canvas.drawOffcet(storage, x, y, size_, size_);
+  }
+  return false;
+}
+
+bool gdi::Sprite::setCell(const WORD nRow, const WORD nColumn)
+{
+  return setCell(nRow * getColumnCount() + nColumn);
+}
+
+gdi::AnimatedSprite::AnimatedSprite(const std::string path, const WORD size, WORD fps, WORD lastFrame)
+  :Sprite(path, size)
+{
+  setFPS(fps);
+  setFrame(0);
+  setLastFrame(lastFrame);
+}
+
+gdi::AnimatedSprite::AnimatedSprite(const Bitmap & source, const WORD size, WORD fps, WORD lastFrame)
+  : Sprite(source, size)
+{
+  setFPS(fps);
+  setFrame(0);
+  setLastFrame(lastFrame);
+}
+
+bool gdi::AnimatedSprite::update(const double elapsed)
+{
+  double frameSpeed = elapsed + frameTime_;
+  frameTime_ = ::lround(frameSpeed) % frameDelay_;
+  if (frameSpeed >= frameDelay_)
+  {
+    int frames = frameSpeed / frameDelay_;
+    if (forwardWay_)
+      currentFrame_ += frames;
+    else
+      currentFrame_ -= frames;
+    if (currentFrame_ > lastFrame_)
+    {
+      if (loop_)
+      {
+        currentFrame_ = currentFrame_ % (lastFrame_ + 1);
+        if (!oneWayFlow_)
+          forwardWay_ = !forwardWay_;
+      }
+      else
+        currentFrame_ = lastFrame_;
+    }
+    setFrame(currentFrame_);
+    return true;
+  }
+  return false;
+}
+
+unsigned char gdi::AnimatedSprite::getLoopType() const
+{
+  return 0;
+}
+
+void gdi::AnimatedSprite::setOneWayFlow(bool oneWay)
+{
+  oneWayFlow_ = oneWay;
+}
+
+void gdi::AnimatedSprite::setFPS(WORD fps)
+{
+  frameDelay_ = 1000 / fps;
+}
+
+void gdi::AnimatedSprite::setFrame(WORD frame)
+{
+  setCell(frame);
+}
+
+void gdi::AnimatedSprite::setLastFrame(WORD lastFrame)
+{
+  if (lastFrame)
+    lastFrame_ = lastFrame;
+  else
+    lastFrame_ = getCount();
+}
+
+bool gdi::AnimatedSprite::isLoop() const
+{
+  return loop_;
+}
+
+bool gdi::AnimatedSprite::isOneWayFlow() const
+{
+  return oneWayFlow_;
 }

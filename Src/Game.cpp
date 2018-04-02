@@ -33,7 +33,7 @@ void Game::initialization(HWND handle, bool topmost, UINT mapSize, UINT tileSize
 
     world_ = World(mapSize, tileSize);
 
-    frameDelay_ = lround(MKS_IN_SEC / fpsmax);
+    frameDelay_ = (MKS_IN_SEC / fpsmax);
 
     //hide cursor of console
     HANDLE consoleOutputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -334,16 +334,32 @@ void Game::startGame()
   startTime_ = GetTickCount();
   //some test
   pause();
+
   BitBlt(hdc_, 0, 0, 1000, 1000, hdc_, 0, 0, BLACKNESS);
   
-  gdi::Bitmap bitmap(windowSize_, windowSize_);
-  bitmap.canvas.draw(buffer_);
-  BitBlt(hdc_, 0, 0, windowSize_, windowSize_, bitmap.canvas.getDC(), 0, 0, SRCCOPY);
-  bitmap.saveToFile("D:\\test24.bmp");
+  //gdi::Bitmap bitmap(windowSize_, windowSize_);
+  //bitmap.canvas.draw(buffer_);
+  //BitBlt(hdc_, 0, 0, windowSize_, windowSize_, bitmap.canvas.getDC(), 0, 0, SRCCOPY);
+  //bitmap.saveToFile("D:\\test24.bmp");
   //bitmap.setBitsPerPixel(16);
   //bitmap.saveToFile("D:\\test16.bmp");
   //bitmap.setBitsPerPixel(8);
   //bitmap.saveToFile("D:\\test8.bmp");
+  gdi::AnimatedSprite sprite("D:\\explong.bmp",100, 30);
+  //BitBlt(hdc_, 0, 0, 1000, 1000, sprite.storage.canvas.getDC(), 0, 0, SRCCOPY);
+  sprite.getCount();
+  INT64 lastTime = getTimeMks() - 1000;
+  SetStretchBltMode(hdc_, HALFTONE);
+  while (true)
+  {
+    INT64 startTime = getTimeMks();
+    INT64 elapsedTime = startTime - lastTime;
+    (sprite.update(elapsedTime / (double)MSEC_IN_SEC));
+    //BitBlt(hdc_, 0, 0, 1000, 1000, sprite.currentImage.canvas.getDC(), 0, 0, SRCCOPY);
+    StretchBlt(hdc_, 0, 0, 128, 128, sprite.currentImage.canvas.getDC(), 0, 0, 100, 100, SRCCOPY);
+    lastTime = startTime;
+    Sleep(25);
+  }
 }
 
 void Game::stopGame()
