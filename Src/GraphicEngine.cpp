@@ -24,6 +24,146 @@ const COLORREF COLOR_WHITE = 0xFFFFFF;
 
 using namespace gdi;
 
+bool gdi::prepareBitmapAlpha(HDC hdc, HBITMAP hBmp)
+{
+  BITMAP bitmap;
+  if (GetObject(hBmp, sizeof(BITMAP), &bitmap))
+  {
+    BITMAPINFO bitmapInfo = { 0 };
+    bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bitmapInfo.bmiHeader.biWidth = bitmap.bmWidth;
+    bitmapInfo.bmiHeader.biHeight = bitmap.bmHeight;
+    bitmapInfo.bmiHeader.biPlanes = bitmap.bmPlanes;
+    bitmapInfo.bmiHeader.biBitCount = bitmap.bmBitsPixel;
+    bitmapInfo.bmiHeader.biCompression = BI_RGB;
+    bitmapInfo.bmiHeader.biSizeImage = bitmap.bmWidth * bitmap.bmHeight * 4;
+
+    std::vector<UINT> bits;
+    bits.resize(bitmap.bmWidth * bitmap.bmHeight, 0x0);
+    if (GetDIBits(hdc, hBmp, 0, bitmap.bmHeight, (void**)&bits[0], &bitmapInfo, DIB_RGB_COLORS))
+    {
+      //for (auto pixel = bits.begin(); pixel != bits.end(); ++pixel)
+      std::for_each(bits.begin(), bits.end(),
+      [](UINT &pixel)
+      {
+        BYTE alpha = (BYTE)(pixel >> 24);
+        double mul = 0.0;
+        if (alpha != 0)
+          mul = (alpha == 1)? 1.0: alpha / 255.0;
+        pixel = (alpha << 24)
+          | (BYTE(GetRValue(pixel) * mul))
+          | (BYTE(GetGValue(pixel) * mul) << 8)
+          | (BYTE(GetBValue(pixel) * mul) << 16);
+      });
+      return SetDIBits(hdc, hBmp, 0, bitmap.bmHeight, (void**)&bits[0], &bitmapInfo, DIB_RGB_COLORS);
+    }
+  }
+  return false;
+}
+
+bool gdi::rotate(const HBITMAP hBitmap, const int degres, bool AdjustSize)
+{
+  if (degres % 360 == 0)
+    return true;
+  bool result = false;
+  HDC newHDC = CreateCompatibleDC(NULL);
+  HGDIOBJ replaced = SelectObject(newHDC, hBitmap);
+  if (replaced)
+  {
+    BITMAP bitmap;
+    if (GetObject(hBitmap, sizeof(BITMAP), &bitmap))
+    {
+      POINT Points[3];
+      double radians = (degres * PI) / 180;
+      double Cosinus = cos(radians);
+      double Sinus = sin(radians);
+      int Width = bitmap.bmWidth;
+      int Height = bitmap.bmHeight;
+      if (AdjustSize)
+      {
+        Width = lround(bitmap.bmWidth * abs(Cosinus) + bitmap.bmHeight * abs(Sinus));
+        Height = lround(bitmap.bmWidth * abs(Sinus) + bitmap.bmHeight * abs(Cosinus));
+      }
+      int OffsetX = lround((Width - Width * Cosinus + Height * Sinus) / 2);
+      int OffsetY = lround((Height - Width * Sinus - Height * Cosinus) / 2);
+      Points[0].x = (OffsetX);
+      Points[0].y = (OffsetY);
+      Points[1].x = lround(OffsetX + Width * Cosinus);
+      Points[1].y = lround(OffsetY + Width * Sinus);
+      Points[2].x = lround(OffsetX - Height * Sinus);
+      Points[2].y = lround(OffsetY + Height * Cosinus);
+      result = PlgBlt(newHDC, Points, newHDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, 0, 0, 0);
+    }
+    SelectObject(newHDC, replaced);
+  }
+  DeleteDC(newHDC);
+  return result;
+}
+
+bool gdi::rotate(const Bitmap & bitmap, const int degres, bool AdjustSize)
+{
+  return bitmap.canvas.rotate(degres, AdjustSize);
+  //return rotate(bitmap.getHandle(), degres, AdjustSize);
+}
+
+bool gdi::scale(const HBITMAP hBitmap, const int percent)
+{
+  bool result = false;
+  if (hBitmap)
+  {
+    HDC newHDC = CreateCompatibleDC(NULL);
+    HGDIOBJ replaced = SelectObject(newHDC, hBitmap);
+    if (newHDC && replaced)
+    {
+      BITMAP bitmap;
+      if (GetObject(hBitmap, sizeof(BITMAP), &bitmap))
+      {
+        double multiplier = percent / 100;
+        result = StretchBlt(newHDC, 0, 0, lround(bitmap.bmWidth * multiplier), lround(bitmap.bmHeight * multiplier), newHDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, SRCCOPY);
+      }
+      SelectObject(newHDC, replaced);
+    }
+    DeleteDC(newHDC);
+  }
+  return result;
+}
+
+bool gdi::scale(const Bitmap & bitmap, const int percent)
+{
+  return false;
+}
+
+bool gdi::draw(const HDC hdc, const HBITMAP hBitmap, const int x, const int y, const int width, const int height, const bool stretch, const DWORD copymode)
+{
+  bool result = false;
+  if (hBitmap)
+  {
+    HDC newHDC = CreateCompatibleDC(NULL);
+    HGDIOBJ replaced = SelectObject(newHDC, hBitmap);
+    if (newHDC && replaced)
+    {
+      BITMAP bitmap;
+      if (GetObject(hBitmap, sizeof(BITMAP), &bitmap))
+      {
+        if (!stretch)
+        {
+          if ((width == 0 || bitmap.bmWidth == width) && (height == 0 || bitmap.bmHeight == height))
+            result = BitBlt(hdc, x, y, bitmap.bmWidth, bitmap.bmHeight, newHDC, 0, 0, copymode);
+          else
+            if (width && height)
+              result = BitBlt(hdc, x, y, width, height, newHDC, 0, 0, copymode);
+        }
+        else
+          if (width && height)
+            result = StretchBlt(hdc, x, y, width, height, newHDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, copymode);
+      }
+      SelectObject(newHDC, replaced);
+    }
+    DeleteDC(newHDC);
+  }
+  return result;
+}
+
 gdi::GraphicEngine::GraphicEngine()
 {
 }
@@ -34,42 +174,38 @@ gdi::GraphicEngine::~GraphicEngine()
 
 gdi::Canvas::Canvas(HDC hdc)
 {
-  /*
-  HDC targetDC = hdc;
-  if (targetDC == NULL)
-  {
-    targetDC = GetDC(NULL);
-    hdc_ = CreateCompatibleDC(targetDC);
-    ReleaseDC(NULL, targetDC);
-  }
-  else
-    hdc_ = CreateCompatibleDC(targetDC);
-  */
   hdc_ = CreateCompatibleDC(0);
   assert(hdc_ != NULL);
   pen.setHDC(hdc_);
   brush.setHDC(hdc_);
   font.setHDC(hdc_);
-  //setBrush();
-  //setPen();
-  //setFont(COLOR_WHITE);
   setPenMode();
   SetStretchBltMode(hdc_, HALFTONE);
+  setBkMode(TRANSPARENT);
 }
 
 gdi::Canvas::~Canvas()
 {
   reset();
-  //DeleteObject(hPen_);
-  //DeleteObject(hFont_);
-  //DeleteObject(hBrush_);
   if (hdc_)
     DeleteDC(hdc_);
 }
 
-bool gdi::Canvas::drawTo(const HDC hdc, const int x, const int y) const
+bool gdi::Canvas::drawTo(const HDC hdc, const int offsetX, const int OffsetY, const int width, const int height, const int x, const int y) const
 {
-  return false;
+  if (!hdc_ || !getBitmap())
+    return false;
+  if (width == 0 || height == 0)
+  {
+    BITMAP bitmap;
+    if (GetObject(getBitmap(), sizeof(BITMAP), &bitmap))
+      //return GdiTransparentBlt(hdc, x, y, bitmap.bmWidth, bitmap.bmHeight
+      //  , hdc_, 0, 0, bitmap.bmWidth, bitmap.bmHeight
+      //  , GetPixel(hdc_,1,1));
+      return BitBlt(hdc, x, y, bitmap.bmWidth, bitmap.bmHeight, hdc_, offsetX, OffsetY, copyMode_);
+  }
+  else
+    return BitBlt(hdc, x, y, width, height, hdc_, offsetX, OffsetY, copyMode_);
 }
 
 bool gdi::Canvas::drawTo(const HBITMAP hBitmap, const int x, const int y) const
@@ -89,7 +225,10 @@ WORD gdi::Canvas::getPenMode()const
 
 HBITMAP gdi::Canvas::getBitmap() const
 {
-  return hBitmap_;
+  if (hBitmap_)
+    return hBitmap_;
+  else
+    return (HBITMAP)GetCurrentObject(hdc_, OBJ_BITMAP);
 }
 
 COLORREF gdi::Canvas::getBkColor()const
@@ -184,114 +323,101 @@ void gdi::Canvas::deselectBitmap()
 
 bool gdi::Canvas::draw(const Bitmap& bitmap, const int x, const int y, const int width, const int height)const
 {
-  if (!hdc_)
+  if (!hdc_ || !getBitmap())
     return false;
   bool result = false;
-  result = BitBlt(hdc_, x, y, width, height, bitmap.canvas.getDC(), 0, 0, copyMode_);
+  if (width == 0 || height == 0)
+  {
+    result = BitBlt(hdc_, x, y, bitmap.getWidth(), bitmap.getHeight(), bitmap.canvas.getDC(), 0, 0, copyMode_);
+  }
+  else
+    result = BitBlt(hdc_, x, y, width, height, bitmap.canvas.getDC(), 0, 0, copyMode_);
   return result;
 }
 
-bool gdi::Canvas::drawOffcet(const Bitmap & bitmap, const int x, const int y, const int width, const int height) const
+bool gdi::Canvas::drawOffset(const Bitmap & bitmap, const int x, const int y, const int width, const int height) const
 {
-  if (!hdc_)
+  if (!hdc_ || !getBitmap())
     return false;
   bool result = false;
-  result = BitBlt(hdc_, 0, 0, width, height, bitmap.canvas.getDC(), x, y, copyMode_);
+  if (width == 0 || height == 0)
+  {
+    result = BitBlt(hdc_, 0, 0, bitmap.getWidth(), bitmap.getHeight(), bitmap.canvas.getDC(), x, y, copyMode_);
+  }
+  else
+    result = BitBlt(hdc_, 0, 0, width, height, bitmap.canvas.getDC(), x, y, copyMode_);
   return result;
 }
 
 bool gdi::Canvas::draw(const HBITMAP hBitmap, const POINT point)const
 {
-  if (!hdc_)
+  if (!hdc_ || !getBitmap())
     return false;
   return draw(hBitmap, point.x, point.y);
 }
 
 bool gdi::Canvas::draw(const HBITMAP hBitmap, const int x, const int y, const int width, const int height, const bool stretch)const
 {
-  if (!hdc_)
+  if (!hdc_ || !getBitmap())
     return false;
-  bool result = false;
-  if (hBitmap)
-  {
-    HDC hDC = CreateCompatibleDC(hdc_);
-    HGDIOBJ replaced = SelectObject(hDC, hBitmap);
-    if (hDC && replaced)
-    {
-      BITMAP bitmap;
-      GetObject(hBitmap, sizeof(BITMAP), &bitmap);
-      if (!stretch)
-      {
-        if ((width == 0 || bitmap.bmWidth == width) && (height == 0 || bitmap.bmHeight == height))
-          result = BitBlt(hdc_, x, y, bitmap.bmWidth, bitmap.bmHeight, hDC, 0, 0, copyMode_);
-        else
-          if (width && height)
-            result = BitBlt(hdc_, x, y, width, height, hDC, 0, 0, copyMode_);
-      }
-      else
-        if (width && height)
-          result = StretchBlt(hdc_, x, y, width, height, hDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, copyMode_);
-      SelectObject(hDC, replaced);
-    }
-    DeleteDC(hDC);
-  }
-  return result;
+  return gdi::draw(hdc_, hBitmap, x, y, width, height, stretch, copyMode_);
 }
 
 bool gdi::Canvas::draw(const HBITMAP hBitmap, const RECT rect)const
 {
-  if (!hdc_)
+  if (!hdc_ || !getBitmap())
     return false;
   return draw(hBitmap, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
 }
 
-bool gdi::Canvas::rotate(const HBITMAP hBitmap, const int degres, bool AdjustSize)const
+bool gdi::Canvas::scale(const int percent) const
 {
-  if (!hdc_)
+  if (!hdc_ || !getBitmap())
+    return false;
+  if (percent == 100)
+    return true;
+  bool result = false;
+  BITMAP bitmap;
+  if (GetObject(hBitmap_, sizeof(BITMAP), &bitmap))
+  {
+    double multiplier = percent / 100;
+    result = StretchBlt(hdc_, 0, 0, lround(bitmap.bmWidth * multiplier), lround(bitmap.bmHeight * multiplier), hdc_, 0, 0, bitmap.bmWidth, bitmap.bmHeight, SRCCOPY);
+  }
+  return result;
+}
+
+bool gdi::Canvas::rotate(const int degres, bool AdjustSize) const
+{
+  if (!hdc_ || !getBitmap())
     return false;
   if (degres % 360 == 0)
     return true;
   bool result = false;
-  HDC hDC = CreateCompatibleDC(NULL);
-  HGDIOBJ replaced = SelectObject(hDC, hBitmap);
-  if (replaced)
+  BITMAP bitmap;
+  if (GetObject(hBitmap_, sizeof(BITMAP), &bitmap))
   {
-    BITMAP bitmap;
-    GetObject(hBitmap, sizeof(BITMAP), &bitmap);
+    POINT Points[3];
+    double radians = (degres * PI) / 180;
+    double Cosinus = cos(radians);
+    double Sinus = sin(radians);
+    int Width = bitmap.bmWidth;
+    int Height = bitmap.bmHeight;
+    if (AdjustSize)
     {
-      POINT Points[3];
-      double radians = (degres * PI) / 180;
-      double Cosinus = cos(radians);
-      double Sinus = sin(radians);
-      int Width = bitmap.bmWidth;
-      int Height = bitmap.bmHeight;
-      if (AdjustSize)
-      {
-        Width = lround(bitmap.bmWidth * abs(Cosinus) + bitmap.bmHeight * abs(Sinus));
-        Height = lround(bitmap.bmWidth * abs(Sinus) + bitmap.bmHeight * abs(Cosinus));
-      }
-      int OffsetX = lround((Width - Width * Cosinus + Height * Sinus) / 2);
-      int OffsetY = lround((Height - Width * Sinus - Height * Cosinus) / 2);
-      Points[0].x = (OffsetX);
-      Points[0].y = (OffsetY);
-      Points[1].x = lround(OffsetX + Width * Cosinus);
-      Points[1].y = lround(OffsetY + Width * Sinus);
-      Points[2].x = lround(OffsetX - Height * Sinus);
-      Points[2].y = lround(OffsetY + Height * Cosinus);
-      result = PlgBlt(hDC, Points, hDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, 0, 0, 0);
+      Width = lround(bitmap.bmWidth * abs(Cosinus) + bitmap.bmHeight * abs(Sinus));
+      Height = lround(bitmap.bmWidth * abs(Sinus) + bitmap.bmHeight * abs(Cosinus));
     }
-    SelectObject(hDC, replaced);
+    int OffsetX = lround((Width - Width * Cosinus + Height * Sinus) / 2);
+    int OffsetY = lround((Height - Width * Sinus - Height * Cosinus) / 2);
+    Points[0].x = (OffsetX);
+    Points[0].y = (OffsetY);
+    Points[1].x = lround(OffsetX + Width * Cosinus);
+    Points[1].y = lround(OffsetY + Width * Sinus);
+    Points[2].x = lround(OffsetX - Height * Sinus);
+    Points[2].y = lround(OffsetY + Height * Cosinus);
+    result = PlgBlt(hdc_, Points, hdc_, 0, 0, bitmap.bmWidth, bitmap.bmHeight, 0, 0, 0);
   }
-  DeleteDC(hDC);
   return result;
-}
-
-bool gdi::Canvas::rotate(const Bitmap & bitmap, const int degres, bool AdjustSize)const
-{
-  if (!hdc_)
-    return false;
-  bitmap.getHandle();
-  return rotate(bitmap, degres, AdjustSize);
 }
 
 bool gdi::Canvas::moveTo(const POINT point)const
@@ -485,7 +611,7 @@ gdi::Bitmap::Bitmap(WORD width, WORD height, WORD bitCount)
   */
   ReleaseDC(NULL, screenDC);
   assert(hBitmap_ != NULL);
-  initialization();
+  refresh();
 }
 
 gdi::Bitmap::Bitmap(HDC hdc, WORD width, WORD height)
@@ -493,7 +619,7 @@ gdi::Bitmap::Bitmap(HDC hdc, WORD width, WORD height)
 {
   hBitmap_ = CreateCompatibleBitmap(hdc, width, height);
   assert(hBitmap_ != NULL);
-  initialization();
+  refresh();
 }
 
 gdi::Bitmap::Bitmap(std::string path)
@@ -508,7 +634,7 @@ bool gdi::Bitmap::loadFromFile(std::string path)
   bool result = false;
   free();
   hBitmap_ = (HBITMAP)LoadImage(NULL, path.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);// 
-  result = initialization();
+  result = refresh();
   return result;
 }
 
@@ -574,28 +700,45 @@ bool gdi::Bitmap::saveToFile(std::string path)
   GlobalFree((HGLOBAL)lpBits);
 }
 
-void gdi::Bitmap::setSize(WORD width, WORD height)
+void gdi::Bitmap::setSize(WORD width, WORD height, bool reDraw)
 {
   if (width == 0 || height == 0)
     return;
   dib_ = { 0 };
-  if (hBitmap_)
-    GetObject(hBitmap_, sizeof(DIBSECTION), &dib_.dsBm);
-  /*
-  if (width!=dib_.dsBm.bmWidth || height != dib_.dsBm.bmHeight)
-  {
-    DIBSECTION dib = dib_;
-    dib.dsBm.bmWidth = width;
-    dib.dsBm.bmHeight = height;
-    dib.dsBmih.biWidth = width;
-    dib.dsBmih.biHeight = height;
-  }
-  */
-  if (width != dib_.dsBm.bmWidth || height != dib_.dsBm.bmHeight)
+  if (hBitmap_ && GetObject(hBitmap_, sizeof(DIBSECTION), &dib_.dsBm) &&
+    (width != dib_.dsBm.bmWidth || height != dib_.dsBm.bmHeight))
   {
     hBitmap_ = (HBITMAP)CopyImage(hBitmap_, IMAGE_BITMAP, width, height, LR_COPYDELETEORG | LR_CREATEDIBSECTION);// 
-    initialization();
+    refresh();
+    if (reDraw)
+      (canvas.getDC(), 0, 0, width, height, canvas.getDC(), 0, 0, dib_.dsBm.bmWidth, dib_.dsBm.bmHeight, SRCCOPY);
   }
+}
+
+void gdi::Bitmap::scale(WORD percent)
+{
+  if (hBitmap_ && GetObject(hBitmap_, sizeof(DIBSECTION), &dib_.dsBm))
+  {
+    double multiplier = percent / 100.0;
+    hBitmap_ = (HBITMAP)CopyImage(hBitmap_, IMAGE_BITMAP, lround(dib_.dsBm.bmWidth * multiplier), lround(dib_.dsBm.bmHeight * multiplier), LR_COPYDELETEORG | LR_CREATEDIBSECTION);
+    if (hBitmap_)
+    {
+      //canvas.drawTo(newhBitmap_);
+      //if (canvas.getBitmap() != newhBitmap_)
+      //  canvas.setBitmap(newhBitmap_);
+      //DeleteObject(hBitmap_);
+      //hBitmap_ = newhBitmap_;
+      //StretchBlt(canvas.getDC(), 0, 0, lround(dib_.dsBm.bmWidth * multiplier), lround(dib_.dsBm.bmHeight * multiplier), canvas.getDC(), 0, 0, dib_.dsBm.bmWidth, dib_.dsBm.bmHeight, SRCCOPY);  
+      refresh();
+    }
+  }
+}
+
+bool gdi::Bitmap::setTransparent32Bit()
+{
+  if (hBitmap_)
+    return gdi::prepareBitmapAlpha(canvas.getDC(), hBitmap_);
+  return false;
 }
 
 void gdi::Bitmap::setBitsPerPixel(const WORD bitCount)
@@ -746,7 +889,7 @@ void gdi::Bitmap::setBitsPerPixel(const WORD bitCount)
   drawBitmap(dc, 0, 0, newBitmap);
   ReleaseDC(0, dc);
   hBitmap_ = newBitmap;
-  initialization();
+  refresh();
 }
 
 gdi::Bitmap::~Bitmap()
@@ -774,7 +917,17 @@ WORD gdi::Bitmap::getBitsPerPixel() const
   return dib_.dsBm.bmBitsPixel ? dib_.dsBm.bmBitsPixel : dib_.dsBmih.biBitCount;
 }
 
-bool gdi::Bitmap::initialization()
+bool gdi::Bitmap::isSelected() const
+{
+  return hBitmap_ && (canvas.getBitmap() == hBitmap_);
+}
+
+COLORREF gdi::Bitmap::transparentColor() const
+{
+  return transparent_;
+}
+
+bool gdi::Bitmap::refresh()
 {
   bool result = false;
   assert(hBitmap_ != NULL);
@@ -802,7 +955,11 @@ bool gdi::Bitmap::initialization()
   GetDIBits(canvas.getDC(), hBitmap_, 0, bitmapInfo_.bmiHeader.biHeight, bitData_, (BITMAPINFO*)&bitmapInfo_, DIB_RGB_COLORS);
   */
   if (canvas.getBitmap() != hBitmap_)
+  {
     canvas.setBitmap(hBitmap_);
+    transparent_ = GetPixel(canvas.getDC(), 1, 1);
+    canvas.setBkColor(transparent_);
+  }
   return result;
 }
 
@@ -1315,14 +1472,26 @@ WORD gdi::Sprite::getColumnCount()
   return WORD(storage.getWidth() / size_);
 }
 
+void gdi::Sprite::scale(WORD percent)
+{
+  storage.scale(percent);
+  currentImage.scale(percent);
+  size_ = size_ * (percent / 100.0);
+}
+
+void gdi::Sprite::setSize(const WORD size)
+{
+  size_ = size;
+}
+
 bool gdi::Sprite::setCell(const WORD index)
 {
   if ((cellIndex_ != index) && (index <= getCount()))
   {
     cellIndex_ = index;
-    int x = (index % (getColumnCount() + 1) -1)*size_;
+    int x = (index % (getColumnCount() + 1) - 1)*size_;
     int y = (index / (getColumnCount() + 1))*size_;
-    return currentImage.canvas.drawOffcet(storage, x, y, size_, size_);
+    return currentImage.canvas.drawOffset(storage, x, y, size_, size_);
   }
   return false;
 }
@@ -1332,20 +1501,20 @@ bool gdi::Sprite::setCell(const WORD nRow, const WORD nColumn)
   return setCell(nRow * getColumnCount() + nColumn);
 }
 
-gdi::AnimatedSprite::AnimatedSprite(const std::string path, const WORD size, WORD fps, WORD lastFrame)
+gdi::AnimatedSprite::AnimatedSprite(const std::string path, const WORD size, WORD lastFrame, WORD fps)
   :Sprite(path, size)
 {
+  setLastFrame(lastFrame);
   setFPS(fps);
   setFrame(0);
-  setLastFrame(lastFrame);
 }
 
-gdi::AnimatedSprite::AnimatedSprite(const Bitmap & source, const WORD size, WORD fps, WORD lastFrame)
+gdi::AnimatedSprite::AnimatedSprite(const Bitmap & source, const WORD size, WORD lastFrame, WORD fps)
   : Sprite(source, size)
 {
+  setLastFrame(lastFrame);
   setFPS(fps);
   setFrame(0);
-  setLastFrame(lastFrame);
 }
 
 bool gdi::AnimatedSprite::update(const double elapsed)
@@ -1356,9 +1525,9 @@ bool gdi::AnimatedSprite::update(const double elapsed)
   {
     int frames = frameSpeed / frameDelay_;
     if (forwardWay_)
-      currentFrame_ += frames;
+      currentFrame_++;// = frames;
     else
-      currentFrame_ -= frames;
+      currentFrame_--;//= frames;
     if (currentFrame_ > lastFrame_)
     {
       if (loop_)
@@ -1388,7 +1557,10 @@ void gdi::AnimatedSprite::setOneWayFlow(bool oneWay)
 
 void gdi::AnimatedSprite::setFPS(WORD fps)
 {
-  frameDelay_ = 1000 / fps;
+  if (fps)
+    frameDelay_ = 1000 / fps;
+  else
+    frameDelay_ = 1000 / (lastFrame_ + 1);
 }
 
 void gdi::AnimatedSprite::setFrame(WORD frame)

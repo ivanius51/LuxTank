@@ -419,7 +419,7 @@ void Wall::update(double elapsed)
   {
     Game::instance().getWorld().deleteObject(this);
   }
-  
+
   double frameSpeed = elapsed * DEFAULT_BULLET_SPEED + modf(frameTime_, &frameTime_);
   frameTime_ = frameSpeed;
   //updateCallback();
@@ -620,7 +620,7 @@ void Tank::update(double elapsed)
 {
   if (isDead())
     Game::instance().getWorld().deleteObject(this);
-  
+
   double frameSpeed = elapsed * DEFAULT_OBJECT_SPEED + modf(frameTime_, &frameTime_);
   frameTime_ = frameSpeed;
 
@@ -777,8 +777,8 @@ void Bullet::update(double elapsed)
     NewPosition.y += (getOffset().y + (Direction.y * TileSize / 2)) / TileSize;
     double frameSpeed = elapsed * DEFAULT_BULLET_SPEED + modf(frameTime_, &frameTime_);
     frameTime_ = frameSpeed;
-    setOffset(getOffset().x + 
-      (Direction.x * frameSpeed), getOffset().y + lround(Direction.y * frameSpeed));
+    setOffset(getOffset().x +
+      lround(Direction.x * frameSpeed), getOffset().y + lround(Direction.y * frameSpeed));
     if (!Game::instance().getWorld().isValidPosition(NewPosition))
       stop();
     hitTest(NewPosition);

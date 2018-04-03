@@ -23,6 +23,14 @@ namespace gdi
   //forcedeclare
   class Bitmap;
 
+  bool prepareBitmapAlpha(HDC hdc, HBITMAP hBmp);
+  bool scale(const HBITMAP hBitmap, const int percent);
+  bool scale(const Bitmap& bitmap, const int percent);
+  bool rotate(const HBITMAP hBitmap, const int degres, bool AdjustSize = false);
+  bool rotate(const Bitmap& bitmap, const int degres, bool AdjustSize = false);
+  bool draw(const HDC hdc, const HBITMAP hBitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0, const bool stretch = true, const DWORD copymode = SRCCOPY);
+  
+
   class Pen
   {
   public:
@@ -141,17 +149,17 @@ namespace gdi
     Canvas(HDC hdc = NULL);
     ~Canvas();
 
-    bool drawTo(const HDC hdc, const int x = 0, const int y = 0)const;
+    bool drawTo(const HDC hdc, const int offsetX = 0, const int OffsetY = 0, const int width = 0, const int height = 0, const int x = 0, const int y = 0)const;
     bool drawTo(const HBITMAP hBitmap, const int x = 0, const int y = 0)const;
     //bool draw(const Bitmap& bitmap, const int x, const int y)const;
     bool draw(const Bitmap& bitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0)const;
-    bool drawOffcet(const Bitmap& bitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0)const;
+    bool drawOffset(const Bitmap& bitmap, const int offsetX = 0, const int OffsetY = 0, const int width = 0, const int height = 0)const;
     //bool draw(const HBITMAP hBitmap, const int x, const int y)const;
     bool draw(const HBITMAP hBitmap, const POINT point)const;
     bool draw(const HBITMAP hBitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0, const bool stretch = true)const;
     bool draw(const HBITMAP hBitmap, const RECT rect)const;
-    bool rotate(const HBITMAP hBitmap, const int degres, bool AdjustSize = false)const;
-    bool rotate(const Bitmap& bitmap, const int degres, bool AdjustSize = false)const;
+    bool scale(const int percent)const;
+    bool rotate(const int degres, bool AdjustSize = false)const;
     bool moveTo(const POINT point)const;
     bool moveTo(const int x, const int y)const;
     bool lineTo(const int x, const int y)const;
@@ -223,20 +231,25 @@ namespace gdi
 
     bool loadFromFile(std::string path);
     bool saveToFile(std::string path);
-    void setSize(WORD width, WORD height);
+    void setSize(WORD width, WORD height, bool reDraw = false);
+    void scale(WORD percent);
+    bool setTransparent32Bit();
 
     Canvas canvas;
     HBITMAP getHandle() const;
     LONG getWidth() const;
     LONG getHeight() const;
     WORD getBitsPerPixel() const;
+    bool isSelected() const;
+    COLORREF transparentColor() const;
 
     void free();
   protected:
     //not work good
     void setBitsPerPixel(const WORD bitCount);
-    bool initialization();
+    bool refresh();
   private:
+    COLORREF transparent_;
     HBITMAP hBitmap_ = nullptr;
     HBITMAP oldhBitmap_ = nullptr;
     HPALETTE hPalette_ = nullptr;
@@ -257,6 +270,8 @@ namespace gdi
     WORD getRowCount();
     WORD getColumnCount();
 
+    void scale(WORD percent);
+    void setSize(const WORD size);
     bool setCell(const WORD index);
     bool setCell(const WORD nRow, const WORD nColumn);
   private:
@@ -268,14 +283,14 @@ namespace gdi
   class AnimatedSprite : public Sprite
   {
   public:
-    AnimatedSprite(const std::string path, const WORD size, WORD fps = 5, WORD lastFrame = 0);
-    AnimatedSprite(const Bitmap& source, const WORD size, WORD fps = 5, WORD lastFrame = 0);
+    AnimatedSprite(const std::string path, const WORD size, WORD lastFrame = 0, WORD fps = 0);
+    AnimatedSprite(const Bitmap& source, const WORD size, WORD lastFrame = 0, WORD fps = 0);
     bool update(const double elapsed);
     unsigned char getLoopType()const;
     void setOneWayFlow(bool oneWay = true);
-    void setFPS(WORD fps = 5);
-    void setFrame(WORD frame= 0);
-    void setLastFrame(WORD lastFrame = 0);
+    void setFPS(const WORD fps = 0);
+    void setFrame(const WORD frame = 0);
+    void setLastFrame(const WORD lastFrame = 0);
     bool isLoop()const;
     bool isOneWayFlow()const;
   private:

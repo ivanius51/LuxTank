@@ -10,6 +10,7 @@
 #include "GraphicEngine.h"
 
 
+
 Game& Game::instance()
 {
   static Game* instance = new Game();
@@ -345,18 +346,27 @@ void Game::startGame()
   //bitmap.saveToFile("D:\\test16.bmp");
   //bitmap.setBitsPerPixel(8);
   //bitmap.saveToFile("D:\\test8.bmp");
-  gdi::AnimatedSprite sprite("D:\\explong.bmp",100, 30);
+  BLENDFUNCTION blend = {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
+  gdi::AnimatedSprite sprite("D:\\boom32wh12.bmp", 32);
+  sprite.storage.setTransparent32Bit();
+  //sprite.scale(50);
+  
+  //GdiAlphaBlend(hdc_, 0, 0, sprite.storage.getWidth(), sprite.storage.getHeight()
+  //  , sprite.storage.canvas.getDC(),0, 0, sprite.storage.getWidth(), sprite.storage.getHeight()
+  //  , blend);
   //BitBlt(hdc_, 0, 0, 1000, 1000, sprite.storage.canvas.getDC(), 0, 0, SRCCOPY);
-  sprite.getCount();
+  //GdiTransparentBlt(hdc_, 0, 0, sprite.storage.getWidth(), sprite.storage.getHeight()
+  //  , sprite.storage.canvas.getDC(), 0, 0, sprite.storage.getWidth(), sprite.storage.getHeight()
+  //  , COLOR_WHITE);
   INT64 lastTime = getTimeMks() - 1000;
-  SetStretchBltMode(hdc_, HALFTONE);
   while (true)
   {
     INT64 startTime = getTimeMks();
     INT64 elapsedTime = startTime - lastTime;
     (sprite.update(elapsedTime / (double)MSEC_IN_SEC));
+    sprite.currentImage.canvas.drawTo(hdc_);
     //BitBlt(hdc_, 0, 0, 1000, 1000, sprite.currentImage.canvas.getDC(), 0, 0, SRCCOPY);
-    StretchBlt(hdc_, 0, 0, 128, 128, sprite.currentImage.canvas.getDC(), 0, 0, 100, 100, SRCCOPY);
+    //StretchBlt(hdc_, 0, 0, 128, 128, sprite.currentImage.canvas.getDC(), 0, 0, 100, 100, SRCCOPY);
     lastTime = startTime;
     Sleep(25);
   }
