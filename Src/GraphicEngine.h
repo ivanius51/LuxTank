@@ -29,7 +29,8 @@ namespace gdi
   bool rotate(const HBITMAP hBitmap, const int degres, bool AdjustSize = false);
   bool rotate(const Bitmap& bitmap, const int degres, bool AdjustSize = false);
   bool draw(const HDC hdc, const HBITMAP hBitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0, const bool stretch = true, const DWORD copymode = SRCCOPY);
-  
+  bool draw(const HBITMAP hBitmap, const HDC hdc, const int x = 0, const int y = 0, const int width = 0, const int height = 0, const bool stretch = true, const DWORD copymode = SRCCOPY);
+  HBITMAP copyBitmap(HBITMAP hBitmap, bool deleteOriginal = false);
 
   class Pen
   {
@@ -60,7 +61,13 @@ namespace gdi
 
     bool free();
     bool reset();
+
+    const COLORREF* color;
+    const UINT* style;
+    const LONG* width;
   private:
+    void setValues();
+
     HDC hdc_ = nullptr;
     LOGPEN pen_ = { 0 };
     HPEN hPen_ = nullptr;
@@ -98,7 +105,7 @@ namespace gdi
     const UINT* style;
     const ULONG_PTR* hatch;
   private:
-    void update();
+    void setValues();
     HDC hdc_ = nullptr;
     LOGBRUSH brush_ = { 0 };
     HBRUSH hBrush_ = nullptr;
@@ -135,7 +142,10 @@ namespace gdi
     bool free();
     bool reset();
     bool setHDC(HDC hdc);
+
+
   private:
+    void setValues();
     HDC hdc_ = nullptr;
     LOGFONT font_;
     HFONT hFont_ = nullptr;
@@ -150,7 +160,7 @@ namespace gdi
     ~Canvas();
 
     bool drawTo(const HDC hdc, const int offsetX = 0, const int OffsetY = 0, const int width = 0, const int height = 0, const int x = 0, const int y = 0)const;
-    bool drawTo(const HBITMAP hBitmap, const int x = 0, const int y = 0)const;
+    bool drawTo(const HBITMAP hBitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0, const bool stretch = true)const;
     //bool draw(const Bitmap& bitmap, const int x, const int y)const;
     bool draw(const Bitmap& bitmap, const int x = 0, const int y = 0, const int width = 0, const int height = 0)const;
     bool drawOffset(const Bitmap& bitmap, const int offsetX = 0, const int OffsetY = 0, const int width = 0, const int height = 0)const;
@@ -195,6 +205,8 @@ namespace gdi
     void setCopyMode(DWORD copyMode);
     void reset();
     void deselectBitmap();
+
+    BLENDFUNCTION blend = { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
   protected:
   private:
     HDC hdc_ = nullptr;
@@ -234,6 +246,7 @@ namespace gdi
     void setSize(WORD width, WORD height, bool reDraw = false);
     void scale(WORD percent);
     bool setTransparent32Bit();
+    bool drawTo(HBITMAP hBitmap);
 
     Canvas canvas;
     HBITMAP getHandle() const;
@@ -283,8 +296,8 @@ namespace gdi
   class AnimatedSprite : public Sprite
   {
   public:
-    AnimatedSprite(const std::string path, const WORD size, WORD lastFrame = 0, WORD fps = 0);
-    AnimatedSprite(const Bitmap& source, const WORD size, WORD lastFrame = 0, WORD fps = 0);
+    AnimatedSprite(const std::string path, const WORD size, WORD lastFrame = 0, WORD fps = 0, WORD scaled = 100);
+    AnimatedSprite(const Bitmap& source, const WORD size, WORD lastFrame = 0, WORD fps = 0, WORD scaled = 100);
     bool update(const double elapsed);
     unsigned char getLoopType()const;
     void setOneWayFlow(bool oneWay = true);

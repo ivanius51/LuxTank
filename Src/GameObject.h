@@ -153,8 +153,8 @@ private:
 class Tank :public MovableObject
 {
 public:
-  Tank(int x, int y, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
-  Tank(POINT point, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
+  //Tank(int x, int y, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
+  //Tank(POINT point, COLORREF color = COLOR_BLACK, COLORREF background = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
   Tank(int x, int y, const std::string& texture = "", COLORREF color = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
   Tank(POINT point, const std::string& texture = "", COLORREF color = COLOR_BLACK, UINT hp = 1, int attackDamage = 1, UINT width = 0, UINT height = 0);
   void shoot();
@@ -173,6 +173,7 @@ private:
   UINT shootDelay_ = ENEMY_SHOOT_DELAY;
   bool isenemy_ = false;
   bool isplayer_ = false;
+  gdi::AnimatedSprite sprite;
 };
 
 

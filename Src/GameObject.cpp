@@ -489,7 +489,7 @@ bool MovableObject::isMooving()
   return isMooving_;
 }
 
-
+/*
 Tank::Tank(int x, int y, COLORREF color, COLORREF background, UINT hp, int attackDamage, UINT width, UINT height)
   :MovableObject(x, y, color, background, hp, attackDamage, width, height)
 {
@@ -501,9 +501,10 @@ Tank::Tank(POINT point, COLORREF color, COLORREF background, UINT hp, int attack
   : Tank(point.x, point.y, color, background, hp, attackDamage, width, height)
 {
 }
+*/
 
 Tank::Tank(int x, int y, const std::string & texture, COLORREF color, UINT hp, int attackDamage, UINT width, UINT height)
-  : MovableObject(x, y, hp, attackDamage, texture, color, color, width, height)
+  : MovableObject(x, y, hp, attackDamage, texture, color, color, width, height), sprite(texture, 16, 2, 20)
 {
   setIsWalkable(false);
   setCanMove(true);
@@ -573,7 +574,8 @@ void Tank::drawTo(HDC hdc, HBITMAP hbitmap)
 
     if (getTexture())
     {
-      HBITMAP texture = gdi::copyBitmap(getTexture());
+      HBITMAP texture = gdi::copyBitmap(sprite.currentImage.getHandle());//getTexture());
+      //sprite.currentImage.drawTo(texture);
       int degres = 0;
       if (getDirection().x == -1)
         degres = 270;
@@ -620,6 +622,11 @@ void Tank::update(double elapsed)
 {
   if (isDead())
     Game::instance().getWorld().deleteObject(this);
+
+  if (isMooving() || elapsed<=0)
+  {
+    sprite.update(elapsed);
+  }
 
   double frameSpeed = elapsed * DEFAULT_OBJECT_SPEED + modf(frameTime_, &frameTime_);
   frameTime_ = frameSpeed;

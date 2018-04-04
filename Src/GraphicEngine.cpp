@@ -27,7 +27,7 @@ using namespace gdi;
 bool gdi::prepareBitmapAlpha(HDC hdc, HBITMAP hBmp)
 {
   BITMAP bitmap;
-  if (GetObject(hBmp, sizeof(BITMAP), &bitmap))
+  if (GetObject(hBmp, sizeof(BITMAP), &bitmap) && bitmap.bmBitsPixel == 32)
   {
     BITMAPINFO bitmapInfo = { 0 };
     bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -44,12 +44,12 @@ bool gdi::prepareBitmapAlpha(HDC hdc, HBITMAP hBmp)
     {
       //for (auto pixel = bits.begin(); pixel != bits.end(); ++pixel)
       std::for_each(bits.begin(), bits.end(),
-      [](UINT &pixel)
+        [](UINT &pixel)
       {
         BYTE alpha = (BYTE)(pixel >> 24);
         double mul = 0.0;
         if (alpha != 0)
-          mul = (alpha == 1)? 1.0: alpha / 255.0;
+          mul = (alpha == 1) ? 1.0 : alpha / 255.0;
         pixel = (alpha << 24)
           | (BYTE(GetRValue(pixel) * mul))
           | (BYTE(GetGValue(pixel) * mul) << 8)
@@ -164,6 +164,61 @@ bool gdi::draw(const HDC hdc, const HBITMAP hBitmap, const int x, const int y, c
   return result;
 }
 
+bool gdi::draw(const HBITMAP hBitmap, const HDC hdc, const int x, const int y, const int width, const int height, const bool stretch, const DWORD copymode)
+{
+  bool result = false;
+  if (hBitmap)
+  {
+    HDC newHDC = CreateCompatibleDC(NULL);
+    HGDIOBJ replaced = SelectObject(newHDC, hBitmap);
+    if (newHDC && replaced)
+    {
+      BITMAP bitmap;
+      if (GetObject(hBitmap, sizeof(BITMAP), &bitmap))
+      {
+        if (!stretch)
+        {
+          if ((width == 0 || bitmap.bmWidth == width) && (height == 0 || bitmap.bmHeight == height))
+            result = BitBlt(newHDC, x, y, bitmap.bmWidth, bitmap.bmHeight, hdc, 0, 0, copymode);
+          else
+            if (width && height)
+              result = BitBlt(newHDC, x, y, width, height, hdc, 0, 0, copymode);
+        }
+        else
+          if (width && height)
+            result = StretchBlt(newHDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, hdc, x, y, width, height, copymode);
+      }
+      SelectObject(newHDC, replaced);
+    }
+    DeleteDC(newHDC);
+  }
+  return result;
+}
+
+HBITMAP gdi::copyBitmap(HBITMAP hBitmap, bool deleteOriginal)
+{
+  UINT flags = LR_CREATEDIBSECTION;
+  if (deleteOriginal)
+    flags = flags | LR_COPYDELETEORG;
+  return (HBITMAP)CopyImage(hBitmap, IMAGE_BITMAP, 0, 0, flags);
+  /*
+  HDC hdc = GetDC(GetConsoleWindow());
+  HDC hdcDestination = CreateCompatibleDC(hdc);
+  BITMAP bitmap;
+  GetObject(hBitmap, sizeof(BITMAP), &bitmap);
+  HBITMAP result = CreateCompatibleBitmap(hdc, bitmap.bmWidth, bitmap.bmHeight);
+  HGDIOBJ dstold = SelectObject(hdcDestination, result);
+  if (dstold)
+  {
+  drawBitmap(hdcDestination, 0, 0, hBitmap, false);
+  SelectObject(hdcDestination, dstold);
+  }
+  DeleteDC(hdcDestination);
+  ReleaseDC(GetConsoleWindow(), hdc);
+  return result;
+  */
+}
+
 gdi::GraphicEngine::GraphicEngine()
 {
 }
@@ -208,9 +263,9 @@ bool gdi::Canvas::drawTo(const HDC hdc, const int offsetX, const int OffsetY, co
     return BitBlt(hdc, x, y, width, height, hdc_, offsetX, OffsetY, copyMode_);
 }
 
-bool gdi::Canvas::drawTo(const HBITMAP hBitmap, const int x, const int y) const
+bool gdi::Canvas::drawTo(const HBITMAP hBitmap, const int x, const int y, const int width, const int height, const bool stretch) const
 {
-  return false;
+  return gdi::draw(hBitmap, this->hdc_, x, y, width, height, stretch, copyMode_);
 }
 
 HDC gdi::Canvas::getDC()const
@@ -741,6 +796,11 @@ bool gdi::Bitmap::setTransparent32Bit()
   return false;
 }
 
+bool gdi::Bitmap::drawTo(HBITMAP hBitmap)
+{
+  return this->canvas.drawTo(hBitmap, 0, 0, getWidth(), getHeight());
+}
+
 void gdi::Bitmap::setBitsPerPixel(const WORD bitCount)
 {
   if (bitCount < 1 || bitCount>32)
@@ -1112,6 +1172,12 @@ bool gdi::Pen::reset()
   }
   return false;
 }
+void gdi::Pen::setValues()
+{
+  color = &pen_.lopnColor;
+  style = &pen_.lopnStyle;
+  width = &pen_.lopnWidth.x;
+}
 LOGPEN gdi::Pen::getPen()const
 {
   return pen_;
@@ -1121,6 +1187,7 @@ gdi::Pen::Pen(HDC hdc, const COLORREF color, const UINT width, const UINT style)
   //assert(hdc != NULL);
   hdc_ = hdc;
   setPen(color, style, width);
+  setValues();
 }
 gdi::Pen::~Pen()
 {
@@ -1150,7 +1217,7 @@ gdi::Brush::Brush(HDC hdc, const COLORREF color, const UINT style, const ULONG_P
   //assert(hdc != NULL);
   hdc_ = hdc;
   setBrush(color, style, hatch);
-  update();
+  setValues();
 }
 gdi::Brush::~Brush()
 {
@@ -1194,7 +1261,7 @@ bool gdi::Brush::setHDC(HDC hdc)
   return false;
 }
 
-void gdi::Brush::update()
+void gdi::Brush::setValues()
 {
   color = &brush_.lbColor;
   style = &brush_.lbStyle;
@@ -1501,20 +1568,22 @@ bool gdi::Sprite::setCell(const WORD nRow, const WORD nColumn)
   return setCell(nRow * getColumnCount() + nColumn);
 }
 
-gdi::AnimatedSprite::AnimatedSprite(const std::string path, const WORD size, WORD lastFrame, WORD fps)
+gdi::AnimatedSprite::AnimatedSprite(const std::string path, const WORD size, WORD lastFrame, WORD fps, WORD scaled)
   :Sprite(path, size)
 {
   setLastFrame(lastFrame);
   setFPS(fps);
-  setFrame(0);
+  setFrame(1);
+  scale(scaled);
 }
 
-gdi::AnimatedSprite::AnimatedSprite(const Bitmap & source, const WORD size, WORD lastFrame, WORD fps)
+gdi::AnimatedSprite::AnimatedSprite(const Bitmap & source, const WORD size, WORD lastFrame, WORD fps, WORD scaled)
   : Sprite(source, size)
 {
   setLastFrame(lastFrame);
   setFPS(fps);
-  setFrame(0);
+  setFrame(1);
+  //scale(scaled);
 }
 
 bool gdi::AnimatedSprite::update(const double elapsed)

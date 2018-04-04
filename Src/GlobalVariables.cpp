@@ -38,8 +38,8 @@ COLORREF ENEMY_COLOR = RGB(128, 0, 0);
 
 const std::string WALL_TEXTURE = "res/wall.bmp";
 const std::string GOLD_TEXTURE = "res/treasure.bmp";
-const std::string TANK_GREEN_1 = "res/tankgreen.bmp";
-const std::string TANK_BLUE_1 = "res/tankblue.bmp";
+const std::string TANK_GREEN_1 = "D:\\tank_green.bmp";//"res/tankgreen.bmp";
+const std::string TANK_BLUE_1 = "D:\\tank_white.bmp";//"res/tankblue.bmp";
 
 POINT DEFAULT_DIRECTION = { 0, -1 };
 
@@ -217,23 +217,7 @@ namespace gdi {
     }
     DeleteDC(hDC);
   }
-  HBITMAP copyBitmap(HBITMAP hBitmap)
-  {
-    HDC hdc = GetDC(GetConsoleWindow());
-    HDC hdcDestination = CreateCompatibleDC(hdc);
-    BITMAP bitmap;
-    GetObject(hBitmap, sizeof(BITMAP), &bitmap);
-    HBITMAP result = CreateCompatibleBitmap(hdc, bitmap.bmWidth, bitmap.bmHeight);
-    HGDIOBJ dstold = SelectObject(hdcDestination, result);
-    if (dstold)
-    {
-      drawBitmap(hdcDestination, 0, 0, hBitmap, false);
-      SelectObject(hdcDestination, dstold);
-    }
-    DeleteDC(hdcDestination);
-    ReleaseDC(GetConsoleWindow(), hdc);
-    return result;
-  }
+  
   PBITMAPINFO CreateBitmapInfoStruct(HWND hwnd, HBITMAP hBmp)
   {
     BITMAP bmp;

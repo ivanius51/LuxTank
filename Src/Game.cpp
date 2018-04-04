@@ -304,7 +304,7 @@ void Game::startGame()
   SetTextColor(staticLayerDc_, RGB(255, 255, 255));
   SetBkMode(staticLayerDc_, TRANSPARENT);
   std::string strOut;
-  /*
+  
   for (int i = 159; i > 0; i--)
   {
     UINT startTime = GetTickCount();
@@ -328,48 +328,11 @@ void Game::startGame()
     DeleteObject(replacedStatic);
     DeleteObject(hfont);
   }
-  */
+  
   SelectObject(staticLayerDc_, oldfont);
   DeleteObject(hfont);
   resume();
   startTime_ = GetTickCount();
-  //some test
-  pause();
-
-  BitBlt(hdc_, 0, 0, 1000, 1000, hdc_, 0, 0, BLACKNESS);
-  
-  //gdi::Bitmap bitmap(windowSize_, windowSize_);
-  //bitmap.canvas.draw(buffer_);
-  //BitBlt(hdc_, 0, 0, windowSize_, windowSize_, bitmap.canvas.getDC(), 0, 0, SRCCOPY);
-  //bitmap.saveToFile("D:\\test24.bmp");
-  //bitmap.setBitsPerPixel(16);
-  //bitmap.saveToFile("D:\\test16.bmp");
-  //bitmap.setBitsPerPixel(8);
-  //bitmap.saveToFile("D:\\test8.bmp");
-  BLENDFUNCTION blend = {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
-  gdi::AnimatedSprite sprite("D:\\boom32wh12.bmp", 32);
-  sprite.storage.setTransparent32Bit();
-  //sprite.scale(50);
-  
-  //GdiAlphaBlend(hdc_, 0, 0, sprite.storage.getWidth(), sprite.storage.getHeight()
-  //  , sprite.storage.canvas.getDC(),0, 0, sprite.storage.getWidth(), sprite.storage.getHeight()
-  //  , blend);
-  //BitBlt(hdc_, 0, 0, 1000, 1000, sprite.storage.canvas.getDC(), 0, 0, SRCCOPY);
-  //GdiTransparentBlt(hdc_, 0, 0, sprite.storage.getWidth(), sprite.storage.getHeight()
-  //  , sprite.storage.canvas.getDC(), 0, 0, sprite.storage.getWidth(), sprite.storage.getHeight()
-  //  , COLOR_WHITE);
-  INT64 lastTime = getTimeMks() - 1000;
-  while (true)
-  {
-    INT64 startTime = getTimeMks();
-    INT64 elapsedTime = startTime - lastTime;
-    (sprite.update(elapsedTime / (double)MSEC_IN_SEC));
-    sprite.currentImage.canvas.drawTo(hdc_);
-    //BitBlt(hdc_, 0, 0, 1000, 1000, sprite.currentImage.canvas.getDC(), 0, 0, SRCCOPY);
-    //StretchBlt(hdc_, 0, 0, 128, 128, sprite.currentImage.canvas.getDC(), 0, 0, 100, 100, SRCCOPY);
-    lastTime = startTime;
-    Sleep(25);
-  }
 }
 
 void Game::stopGame()
@@ -446,6 +409,11 @@ UINT Game::getWindowSize()
 UINT Game::getTextHeightPx()
 {
   return textHeightPx_;
+}
+
+HDC Game::mainDC()
+{
+  return hdc_;
 }
 
 HDC Game::getBufferDc()

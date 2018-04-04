@@ -52,7 +52,7 @@ namespace gdi
   extern void drawBitmap(HDC hdc, const int x, const int y, const int width, const int height, HBITMAP hBitmap, const bool transparent = false);
   extern void rotateBitmap(HBITMAP hBitmap, const int degres, bool AdjustSize = false);
   extern void rotateTexture2(HBITMAP hBitmap, const int degres, bool AdjustSize = false);
-  extern HBITMAP copyBitmap(HBITMAP hBitmap);
+  //extern HBITMAP copyBitmap(HBITMAP hBitmap);
 }
 extern const double PI;
 

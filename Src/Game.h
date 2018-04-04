@@ -42,6 +42,7 @@ public:
   UINT getWindowSize();
   UINT getTextHeightPx();
   //graphics
+  HDC mainDC();
   HDC getBufferDc();
   HBITMAP getBuffer();
   HDC getStaticLayerDc();
