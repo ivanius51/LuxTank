@@ -707,20 +707,35 @@ void Tank::update(double elapsed)
 }
 
 Bullet::Bullet(Tank* tank, UINT speed)
-  :MovableObject(tank->getPosition().x, tank->getPosition().y, tank->getColor(), tank->getBackground(), 1, tank->getAttackDamage(), 0, 0)
+  :shooter_(*tank),
+  MovableObject(tank->getPosition().x, tank->getPosition().y, tank->getColor(), tank->getBackground(), 1, tank->getAttackDamage(), 0, 0)
 {
-  shooter_ = tank;
   setDirection(tank->getDirection());
   UINT TileSize = Game::instance().getWorld().getTileSize();
   speed_ = speed;
-  enemy_ = shooter_->isEnemy();
-  player_ = shooter_->isPlayer();
+  enemy_ = shooter_.isEnemy();
+  player_ = shooter_.isPlayer();
   setWidth(int(TileSize / 16));
   setHeight(TileSize / 3);
   //setOffset(TileSize / 2, TileSize / 2);
   setOffset(tank->getOffset().x + tank->getDirection().x*(TileSize / 3), tank->getOffset().y + tank->getDirection().y*(TileSize / 3));
   moveForward();
+}
 
+Bullet::Bullet(Tank& tank, UINT speed)
+  :shooter_(tank),
+  MovableObject(tank.getPosition().x, tank.getPosition().y, tank.getColor(), tank.getBackground(), 1, tank.getAttackDamage(), 0, 0)
+{
+  setDirection(tank.getDirection());
+  UINT TileSize = Game::instance().getWorld().getTileSize();
+  speed_ = speed;
+  enemy_ = shooter_.isEnemy();
+  player_ = shooter_.isPlayer();
+  setWidth(int(TileSize / 16));
+  setHeight(TileSize / 3);
+  //setOffset(TileSize / 2, TileSize / 2);
+  setOffset(tank.getOffset().x + tank.getDirection().x*(TileSize / 3), tank.getOffset().y + tank.getDirection().y*(TileSize / 3));
+  moveForward();
 }
 
 void Bullet::draw()
@@ -799,7 +814,7 @@ bool Bullet::hitTest(POINT position)
   if (!isFilledPosition)
     return false;
   GameObject* gameobject = Game::instance().getWorld().getObject(position);
-  if (!gameobject || gameobject == shooter_)
+  if (!gameobject || gameobject == &shooter_)
     return false;
   isFilledPosition = isFilledPosition && gameobject;
   //bool selfShoot = gameobject == shooter_;

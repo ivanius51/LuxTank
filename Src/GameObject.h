@@ -139,6 +139,7 @@ class Bullet :public MovableObject
 {
 public:
   Bullet(Tank* tank, UINT speed = DEFAULT_BULLET_SPEED);
+  Bullet(Tank& tank, UINT speed = DEFAULT_BULLET_SPEED);
   void draw();
   void drawTo(HDC hdc, HBITMAP hbitmap);
   void update();
@@ -150,7 +151,7 @@ private:
   bool enemy_ = false;
   bool player_ = false;
   //std::weak_ptr<Tank> shooter_;
-  Tank* shooter_ = nullptr;
+  Tank& shooter_;// = nullptr;
 };
 class Tank :public MovableObject
 {
