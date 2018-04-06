@@ -553,7 +553,7 @@ void Tank::shoot()
   if ((GetTickCount() - shootTime_) > shootDelay_)
   {
     shootTime_ = GetTickCount();
-    Game::instance().addBullet(new Bullet(this));
+    Game::instance().addBullet(new Bullet(*this));
   }
 }
 

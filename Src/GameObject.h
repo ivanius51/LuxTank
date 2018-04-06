@@ -150,7 +150,6 @@ private:
   UINT speed_;
   bool enemy_ = false;
   bool player_ = false;
-  //std::weak_ptr<Tank> shooter_;
   Tank& shooter_;// = nullptr;
 };
 class Tank :public MovableObject

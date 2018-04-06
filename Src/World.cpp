@@ -210,6 +210,9 @@ bool World::canCreateTank(POINT position, int closeDistance)
 
 void World::generateNewMap()
 {
+  tiles_.erase(tiles_.begin(), tiles_.end());
+  bullets_.erase(bullets_.begin(), bullets_.end());
+
   POINT point;
   std::shared_ptr<GameObject> gameobject;
   //random walls

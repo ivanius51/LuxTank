@@ -21,9 +21,9 @@ public:
   void update(double elapsed = 1.0);
   void renderFrame();
   void draw();
-  
-  void test();
+
   //
+  void restartGame();
   void startGame();
   void stopGame();
   void pause();
@@ -41,6 +41,7 @@ public:
   UINT getFrameDelay();
   UINT getWindowSize();
   UINT getTextHeightPx();
+  HWND getHandle()const;
   //graphics
   HDC mainDC();
   HDC getBufferDc();

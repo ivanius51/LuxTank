@@ -182,7 +182,11 @@ void Game::readInput()
   }
   //system commands execute directly
   if (GetAsyncKeyState(VK_ESCAPE) & 0x8001)
-    stopGame();
+  {
+    int msgResult = MessageBox(handle_, "Are you sure for exit?", "Exiting from game", MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION);
+    if (msgResult == IDYES)
+      stopGame();
+  }
   if (GetAsyncKeyState(VK_PAUSE) & 0x8001)
   {
     if (isPaused())
@@ -271,9 +275,13 @@ void Game::draw()
   drawBitmap(0, 0, textLayer_, false);
 }
 
-void Game::test()
+void Game::restartGame()
 {
-
+  if (gameOver_)
+    gameOver_ = false;
+  isPaused_ = true;
+  world_.generateNewMap();
+  startGame();
 }
 
 void Game::startGame()
@@ -397,6 +405,11 @@ UINT Game::getWindowSize()
 UINT Game::getTextHeightPx()
 {
   return textHeightPx_;
+}
+
+HWND Game::getHandle() const
+{
+  return handle_;
 }
 
 HDC Game::mainDC()

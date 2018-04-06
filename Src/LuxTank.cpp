@@ -5,6 +5,7 @@
 
 #include "Game.h"
 #include "GlobalVariables.h"
+#include "LuxTank.h"
 
 void gameLoop()
 {
@@ -23,10 +24,18 @@ void gameLoop()
       {
         Game::instance().useInput();
         Game::instance().update((elapsedTime / (double)MSEC_IN_SEC));
-        //if (!Game::instance().isGameOver())
         Game::instance().renderFrame();
       }
+      else
+      {
+        int msgResult = MessageBox(Game::instance().getHandle(), "Maybe, want play again?", "Restarting game", MB_YESNO | MB_DEFBUTTON1 | MB_ICONQUESTION);
+        if (msgResult == IDYES)
+          Game::instance().restartGame();
+        else
+          Game::instance().pause();
+      }
     }
+    
     Game::instance().showResult();
 
     Game::instance().draw();
@@ -49,8 +58,9 @@ int main()
   srand(GetTickCount());
   //can edit settings and load it from file
   Game::instance().initialization(GetConsoleWindow(), false, MAP_SIZE, TILE_SIZE, MAX_FPS);
-
-  Game::instance().startGame();
+  
+  Game::instance().restartGame();
+  //Game::instance().startGame();
   gameLoop();
 
   Game::instance().free();
