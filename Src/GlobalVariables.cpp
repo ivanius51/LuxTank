@@ -3,7 +3,7 @@
 
 double const PI = 3.141592;
 
-int const MAX_FPS = 60;
+int const MAX_FPS = 100;
 
 int const MAP_SIZE = 15;
 int const TILE_SIZE = 32;
@@ -18,12 +18,12 @@ int const SEC_IN_MIN = 60;
 int const MKS_IN_SEC = 1000000;
 
 int ENEMY_UPDATE_DELAY = 750;
-int ENEMY_SHOOT_DELAY = 800;
+int ENEMY_SHOOT_DELAY = 500;
 int PLAYER_SHOOT_DELAY = 400;
 
 double const DEFAULT_BULLET_SPEED = 0.14;
 double const DEFAULT_OBJECT_SPEED = 0.07;
-int VISIBLE_DISTANCE = 6;
+int VISIBLE_DISTANCE = 8;
 
 bool DEBUG_DRAW_COLLISIONS = false;
 

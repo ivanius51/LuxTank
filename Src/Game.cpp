@@ -197,7 +197,6 @@ void Game::useInput()
 {
   for (const auto& input : inputs_)
     input->execute();
-  clearInput();
 }
 
 void Game::clearInput()
@@ -229,7 +228,7 @@ void Game::update(double elapsed)
   for (auto&& bullet : *bullets)
     bullet->update(elapsed);
 
-  gameOver_ = world_.isNoEnemy() || world_.getPlayer() && world_.getPlayer()->isDead() || world_.getGold() && world_.getGold()->isDead();
+  gameOver_ = world_.isNoEnemy() || !world_.getPlayer() || !world_.getGold() || world_.getGold()->isDead() || world_.getPlayer()->isDead();
   if (gameOver_)
   {
     //pause();
@@ -247,19 +246,6 @@ void Game::update(double elapsed)
     //pause();
   }
 
-  /*
-  //remove collided(stopped) bullets
-  bullets_.erase(
-    std::remove_if(bullets_.begin(), bullets_.end(),
-      [](std::shared_ptr<Bullet> bullet) {return !bullet->isMooving(); }
-  ), bullets_.end());
-
-  //remove Died(destroyed) objects
-  tiles->erase(
-    std::remove_if(tiles->begin(), tiles->end(),
-      [](std::shared_ptr<GameObject> object) {return object->isDead(); }
-  ), tiles->end());
-  */
   world_.bulletsClear();
   world_.objectsClear();
 }
@@ -372,6 +358,8 @@ void Game::increaseScore()
 
 void Game::showResult()
 {
+  if (!Game::instance().isGameOver() && !Game::instance().isPaused())
+    return;
   UINT tilesize = world_.getTileSize();
   SIZE textsize;
   SetTextColor(staticLayerDc_, RGB(255, 255, 255));

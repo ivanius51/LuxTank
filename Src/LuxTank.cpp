@@ -14,31 +14,39 @@ void gameLoop()
     INT64 startTime = getTimeMks();//GetTickCount();
     INT64 elapsedTime = startTime - lastTime;
 
+    Game::instance().clearInput();
     Game::instance().readInput();
-    Game::instance().useInput();
 
     if (!Game::instance().isPaused())
     {
-      Game::instance().update((elapsedTime / (double)MSEC_IN_SEC));
-      Game::instance().renderFrame();
-      Game::instance().draw();
-    };
-    if (Game::instance().isGameOver())
-      Game::instance().showResult();
+      if (!Game::instance().isGameOver())
+      {
+        Game::instance().useInput();
+        Game::instance().update((elapsedTime / (double)MSEC_IN_SEC));
+        //if (!Game::instance().isGameOver())
+        Game::instance().renderFrame();
+      }
+    }
+    Game::instance().showResult();
+
+    Game::instance().draw();
 
     lastTime = startTime;
     INT64 elapsed = getTimeMks(startTime);//(GetTickCount() - startTime);
     double fps = (MKS_IN_SEC / (double)elapsed);
     if (Game::instance().getFrameDelay() > elapsed)
-      //Sleep(Game::instance().getFrameDelay() - elapsedTime);//windows
-      std::this_thread::sleep_for(std::chrono::microseconds(Game::instance().getFrameDelay() - elapsed));
+    {
+      DWORD pauseTime = ((Game::instance().getFrameDelay() - elapsed) / MSEC_IN_SEC) + 1;
+      Sleep(pauseTime);//windows
+      //std::this_thread::sleep_for(std::chrono::microseconds(Game::instance().getFrameDelay() - elapsed));
+    }  
   }
 }
 
 int main()
 {
   //randomization
-  //srand(GetTickCount());
+  srand(GetTickCount());
   //can edit settings and load it from file
   Game::instance().initialization(GetConsoleWindow(), false, MAP_SIZE, TILE_SIZE, MAX_FPS);
 

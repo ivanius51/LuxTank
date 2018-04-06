@@ -147,6 +147,8 @@ public:
 protected:
 private:
   UINT speed_;
+  bool enemy_ = false;
+  bool player_ = false;
   //std::weak_ptr<Tank> shooter_;
   Tank* shooter_ = nullptr;
 };
@@ -171,8 +173,8 @@ protected:
 private:
   UINT shootTime_;
   UINT shootDelay_ = ENEMY_SHOOT_DELAY;
-  bool isenemy_ = false;
-  bool isplayer_ = false;
+  bool enemy_ = false;
+  bool player_ = false;
   gdi::AnimatedSprite sprite;
 };
 

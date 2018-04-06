@@ -517,7 +517,7 @@ Tank::Tank(POINT point, const std::string & texture, COLORREF color, UINT hp, in
 
 bool Tank::isEnemy()
 {
-  return isenemy_;
+  return enemy_;
 }
 
 bool Tank::isEnemy(GameObject* gameobject)
@@ -530,17 +530,17 @@ bool Tank::isEnemy(GameObject* gameobject)
 
 void Tank::setEnemy(bool enemy)
 {
-  isenemy_ = enemy;
+  enemy_ = enemy;
 }
 
 bool Tank::isPlayer()
 {
-  return isplayer_;
+  return player_;
 }
 
 void Tank::setPlayer(bool player)
 {
-  isplayer_ = player;
+  player_ = player;
 }
 
 void Tank::setShootDelay(UINT shootDelay)
@@ -623,10 +623,8 @@ void Tank::update(double elapsed)
   if (isDead())
     Game::instance().getWorld().deleteObject(this);
 
-  if (isMooving() || elapsed<=0)
-  {
+  if (isMooving())
     sprite.update(elapsed);
-  }
 
   double frameSpeed = elapsed * DEFAULT_OBJECT_SPEED + modf(frameTime_, &frameTime_);
   frameTime_ = frameSpeed;
@@ -660,7 +658,7 @@ void Tank::update(double elapsed)
   }
 
   //TODO: Enemy Actions move it to some AI class.method
-  if (!isPlayer() && canUpdate())
+  if ((Game::instance().getWorld().getPlayer()) && !isPlayer() && canUpdate())
   {
     //if AI - find player, gold and move to it or if see it - shoot
     GameObject* Player = Game::instance().getWorld().getPlayer();
@@ -715,11 +713,14 @@ Bullet::Bullet(Tank* tank, UINT speed)
   setDirection(tank->getDirection());
   UINT TileSize = Game::instance().getWorld().getTileSize();
   speed_ = speed;
+  enemy_ = shooter_->isEnemy();
+  player_ = shooter_->isPlayer();
   setWidth(int(TileSize / 16));
   setHeight(TileSize / 3);
   //setOffset(TileSize / 2, TileSize / 2);
   setOffset(tank->getOffset().x + tank->getDirection().x*(TileSize / 3), tank->getOffset().y + tank->getDirection().y*(TileSize / 3));
   moveForward();
+
 }
 
 void Bullet::draw()
@@ -798,34 +799,34 @@ bool Bullet::hitTest(POINT position)
   if (!isFilledPosition)
     return false;
   GameObject* gameobject = Game::instance().getWorld().getObject(position);
+  if (!gameobject || gameobject == shooter_)
+    return false;
   isFilledPosition = isFilledPosition && gameobject;
-  bool selfShoot = gameobject == shooter_;
-  bool toEnemy = shooter_->isEnemy(gameobject);
+  //bool selfShoot = gameobject == shooter_;
+  bool toEnemy = false;// shooter_->isEnemy(gameobject);
   bool toStatic = false;
+  if (dynamic_cast<Tank*>(gameobject))
+    toEnemy = enemy_ != dynamic_cast<Tank*>(gameobject)->isEnemy();
+  else
   if (gameobject)
     toStatic = (!dynamic_cast<MovableObject*>(gameobject) && !gameobject->isWalkable());
-  if (isFilledPosition && !selfShoot && (toEnemy || toStatic))
+  if (isFilledPosition /*&& !selfShoot*/ && (toEnemy || toStatic))
   {
     bool evade = !gameobject || !toStatic;
     if (gameobject && !toStatic)
     {
-      //POINT Direction = getDirection();
-      //POINT targetDirection = dynamic_cast<MovableObject*>(gameobject)->getDirection();
-      //POINT targetOffset = dynamic_cast<MovableObject*>(gameobject)->getOffset();
-      //try Evade (outway animation)
-      //if (((targetDirection.x == Direction.x || targetDirection.y == Direction.y) && dynamic_cast<MovableObject*>(gameobject)->isMooving()))
-      //  evade = ((abs(targetOffset.x) + abs(targetOffset.y)) < Game::instance().getTileSize() / 3);
       POINT targetCenter = dynamic_cast<MovableObject*>(gameobject)->getScreenPositionCenter();
       int myRadius = std::max(getHeight(), getWidth()) / 2;
       int targetRadius = std::max(dynamic_cast<MovableObject*>(gameobject)->getWidth(), dynamic_cast<MovableObject*>(gameobject)->getHeight()) / 2;
-      evade = !circleIntersection(getScreenPositionCenter(), targetCenter, myRadius, targetRadius);//!toEnemy;
+      evade = !circleIntersection(getScreenPositionCenter(), targetCenter, myRadius, targetRadius);
     }
     if (!evade)
     {
       gameobject->takeDamage(getAttackDamage(), getDirection());
-      if (shooter_->isPlayer() && toEnemy)
+      if (player_ && toEnemy)
         Game::instance().increaseScore();
       stop();
+      //self kill
       GameObject::takeDamage(getHP());
       return true;
     }
